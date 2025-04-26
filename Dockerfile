@@ -1,7 +1,8 @@
 # Multi-stage Dockerfile for Go Authentication Module
 
 # Stage 1: Build
-FROM golang:1.20-slim AS builder
+FROM golang:1.22-alpine AS builder
+
 
 WORKDIR /app
 
