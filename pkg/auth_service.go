@@ -1,87 +1,72 @@
 package auth
 
 import (
-	"github.com/dgrijalva/jwt-go"
-	"golang.org/x/crypto/bcrypt"
-	"time"
 	"errors"
+	"regexp"
+	"time"
+
+	"github.com/golang-jwt/jwt/v4"
+	"golang.org/x/crypto/bcrypt"
 )
 
-// AuthServiceImpl implements the AuthService interface.
-type AuthServiceImpl struct {
-	SecretKey         string
-	AccessTokenExpiry int // Token expiration in seconds
+var jwtSecretKey string // This will be dynamically set from AWS Secrets Manager.
+
+// GenerateJWT generates a JWT token with a specified expiration time.
+func GenerateJWT(userID string, expiration time.Duration) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"exp":     time.Now().Add(expiration).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(jwtSecretKey))
 }
 
-// CreateToken generates access and refresh tokens for a user.
-func (a *AuthServiceImpl) CreateToken(userID string) (*TokenDetails, error) {
-	td := &TokenDetails{}
-	td.AtExpires = time.Now().Add(time.Duration(a.AccessTokenExpiry) * time.Second).Unix()
-	td.AccessUUID = userID + "-access"
-	td.RtExpires = time.Now().Add(7 * 24 * time.Hour).Unix()
-	td.RefreshUUID = userID + "-refresh"
-
-	var err error
-
-	// Create Access Token
-	atClaims := jwt.MapClaims{}
-	atClaims["authorized"] = true
-	atClaims["access_uuid"] = td.AccessUUID
-	atClaims["user_id"] = userID
-	atClaims["exp"] = td.AtExpires
-	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	td.AccessToken, err = at.SignedString([]byte(a.SecretKey))
-	if err != nil {
-		return nil, err
-	}
-
-	// Create Refresh Token
-	rtClaims := jwt.MapClaims{}
-	rtClaims["refresh_uuid"] = td.RefreshUUID
-	rtClaims["user_id"] = userID
-	rtClaims["exp"] = td.RtExpires
-	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
-	td.RefreshToken, err = rt.SignedString([]byte(a.SecretKey))
-	if err != nil {
-		return nil, err
-	}
-
-	return td, nil
-}
-
-// ValidateToken validates a JWT and returns the user ID if valid.
-func (a *AuthServiceImpl) ValidateToken(token string) (string, error) {
-	tokenObj, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+// ValidateJWT validates a JWT token and returns the claims if valid.
+func ValidateJWT(tokenString string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
-		return []byte(a.SecretKey), nil
+		return []byte(jwtSecretKey), nil
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	claims, ok := tokenObj.Claims.(jwt.MapClaims)
-	if ok && tokenObj.Valid {
-		userID, ok := claims["user_id"].(string)
-		if !ok {
-			return "", errors.New("invalid token claims")
-		}
-		return userID, nil
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims, nil
 	}
-	return "", errors.New("invalid token")
+	return nil, errors.New("invalid token")
 }
 
-// HashPassword hashes a password using bcrypt.
-func (a *AuthServiceImpl) HashPassword(password string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+// ValidateSignUpInput validates the user input for sign-up.
+func ValidateSignUpInput(email, password string) error {
+	if email == "" || password == "" {
+		return errors.New("email and password cannot be empty")
+	}
+
+	emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+	if matched, _ := regexp.MatchString(emailRegex, email); !matched {
+		return errors.New("invalid email format")
+	}
+
+	if len(password) < 8 {
+		return errors.New("password must be at least 8 characters long")
+	}
+
+	return nil
+}
+
+// HashPassword hashes a plain text password using bcrypt.
+func HashPassword(password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
 	}
-	return string(hash), nil
+	return string(hashedPassword), nil
 }
 
-// CheckPasswordHash compares a hashed password with its plaintext equivalent.
-func (a *AuthServiceImpl) CheckPasswordHash(password, hash string) bool {
-	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
+// CheckPassword compares a hashed password with a plain text password.
+func CheckPassword(hashedPassword, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }

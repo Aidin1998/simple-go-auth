@@ -1,51 +1,55 @@
-# My Go Project
+# Simple Go Auth
 
-This is a simple Go project that demonstrates how to structure a Go application with a command-line interface and utility functions.
+## Overview
+This project provides a simple authentication service using Go, JWT, and AWS Secrets Manager. It is designed to run on AWS ECS behind an Application Load Balancer and scale to handle up to 100,000 concurrent users.
 
-## Project Structure
-
-```
-my-go-project
-├── cmd
-│   └── main.go        # Entry point of the application
-├── pkg
-│   └── utils
-│       └── helper.go  # Utility functions
-├── go.mod             # Module dependencies
-└── go.sum             # Checksums for module dependencies
-```
-
-## Getting Started
-
-To set up and run this project, follow these steps:
-
-1. **Clone the repository:**
-
+## Local Running Instructions
+1. Clone the repository:
    ```bash
-   git clone <repository-url>
-   cd my-go-project
+   git clone https://github.com/your-repo/simple-go-auth.git
+   cd simple-go-auth/my-go-project
    ```
 
-2. **Install dependencies:**
-
-   Ensure you have Go installed on your machine. Then run:
-
+2. Build and run the application locally:
    ```bash
-   go mod tidy
+   go run ./cmd/main.go
    ```
 
-3. **Run the application:**
+3. Access the application at `http://localhost:80`.
 
-   You can run the application using the following command:
-
+## Local Testing Instructions
+1. Run unit tests:
    ```bash
-   go run cmd/main.go
+   go test ./tests -cover
    ```
 
-## Usage
+2. Run integration tests:
+   ```bash
+   go test ./tests/auth_integration_test.go
+   ```
 
-This project currently includes basic utility functions in `pkg/utils/helper.go`. You can extend the functionality by adding more utility functions or modifying the existing ones.
+## Deployment Instructions
+1. Build the Docker image:
+   ```bash
+   docker build -t simple-go-auth .
+   ```
 
-## Contributing
+2. Push the Docker image to AWS ECR:
+   ```bash
+   aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <account_id>.dkr.ecr.<region>.amazonaws.com
+   docker tag simple-go-auth:latest <account_id>.dkr.ecr.<region>.amazonaws.com/simple-go-auth:latest
+   docker push <account_id>.dkr.ecr.<region>.amazonaws.com/simple-go-auth:latest
+   ```
 
-Feel free to submit issues or pull requests if you would like to contribute to this project.
+3. Update the ECS service:
+   ```bash
+   aws ecs update-service --cluster <cluster_name> --service <service_name> --force-new-deployment
+   ```
+
+## AWS Secrets Setup Instructions
+1. Create a secret in AWS Secrets Manager with the key `jwtSecretKey` and your desired secret value.
+2. Update the ECS task definition to include the secret as an environment variable.
+
+## Notes
+- Ensure that your AWS IAM roles have the necessary permissions for ECS, ECR, and Secrets Manager.
+- The application is optimized for production with a multi-stage Docker build and CI/CD pipeline.

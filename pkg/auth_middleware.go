@@ -1,38 +1,40 @@
 package auth
 
 import (
+	"time"
+	"sync"
 	"net/http"
-	"strings"
 )
 
-// AuthMiddleware provides middleware for authentication.
-type AuthMiddleware struct {
-	Service AuthService
+type rateLimiter struct {
+	visits map[string]int
+	mu     sync.Mutex
 }
 
-// Authenticate validates the JWT token from the Authorization header.
-func (m *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
+var limiter = rateLimiter{visits: make(map[string]int)}
+
+// RateLimitMiddleware limits the number of requests from a single IP.
+func RateLimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
+		ip := r.RemoteAddr
+		limiter.mu.Lock()
+		count := limiter.visits[ip]
+		if count >= 5 {
+			limiter.mu.Unlock()
+			http.Error(w, "Too many requests. Try again later.", http.StatusTooManyRequests)
 			return
 		}
+		limiter.visits[ip] = count + 1
+		limiter.mu.Unlock()
 
-		tokenParts := strings.Split(authHeader, " ")
-		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
-			return
-		}
+		// Reset the count after 15 minutes
+		go func(ip string) {
+			time.Sleep(15 * time.Minute)
+			limiter.mu.Lock()
+			delete(limiter.visits, ip)
+			limiter.mu.Unlock()
+		}(ip)
 
-		userID, err := m.Service.ValidateToken(tokenParts[1])
-		if err != nil {
-			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
-			return
-		}
-
-		// Add user ID to the request context for downstream handlers
-		r = r.WithContext(context.WithValue(r.Context(), "userID", userID))
 		next.ServeHTTP(w, r)
 	})
 }
