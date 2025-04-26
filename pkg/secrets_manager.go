@@ -31,3 +31,9 @@ func GetSecret(secretName string) (string, error) {
 
 	return *result.SecretString, nil
 }
+
+// GetJWTSecret retrieves the JWT secret key from AWS Secrets Manager.
+func GetJWTSecret() (string, error) {
+	secretName := "jwtSecretKey" // Replace with your actual secret name
+	return GetSecret(secretName)
+}

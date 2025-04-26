@@ -66,7 +66,34 @@ func HashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
-// CheckPassword compares a hashed password with a plain text password.
-func CheckPassword(hashedPassword, password string) error {
+// Enhance password security with constant-time comparison
+func CheckPasswordSecure(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+}
+
+// Add refresh token creation and validation methods
+func GenerateRefreshToken(userID string, expiration time.Duration) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"exp":     time.Now().Add(expiration).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(jwtSecretKey))
+}
+
+func ValidateRefreshToken(tokenString string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(jwtSecretKey), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims, nil
+	}
+	return nil, errors.New("invalid token")
 }

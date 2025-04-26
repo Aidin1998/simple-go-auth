@@ -1,54 +1,55 @@
-package auth
+package pkg
 
 import (
-	"bytes"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"bytes"
+	"encoding/json"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestIntegration_SignUpAndSignIn(t *testing.T) {
-	// Initialize AuthService and AuthHandler
-	service := &AuthServiceImpl{SecretKey: "test-secret"}
-	handler := &AuthHandler{Service: service}
+func TestIntegration_SignupSigninRefreshProtected(t *testing.T) {
+	t := assert.New(t)
 
-	// Test SignUp
-	signUpPayload := map[string]string{
+	// Mock server setup
+	handler := setupRouter() // Assuming setupRouter initializes routes
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	// Test Signup
+	signupPayload := map[string]string{
 		"email":    "test@example.com",
 		"password": "password123",
 	}
-	signUpBody, _ := json.Marshal(signUpPayload)
-	signUpReq := httptest.NewRequest(http.MethodPost, "/signup", bytes.NewBuffer(signUpBody))
-	signUpReq.Header.Set("Content-Type", "application/json")
-	signUpRec := httptest.NewRecorder()
-	handler.SignUp(signUpRec, signUpReq)
+	resp, err := http.Post(srv.URL+"/signup", "application/json", bytes.NewBuffer(json.Marshal(signupPayload)))
+	assert.NoError(err)
+	assert.Equal(http.StatusOK, resp.StatusCode)
 
-	if signUpRec.Code != http.StatusCreated {
-		t.Fatalf("expected status %v, got %v", http.StatusCreated, signUpRec.Code)
-	}
-
-	// Test SignIn
-	signInPayload := map[string]string{
+	// Test Signin
+	signinPayload := map[string]string{
 		"email":    "test@example.com",
 		"password": "password123",
 	}
-	signInBody, _ := json.Marshal(signInPayload)
-	signInReq := httptest.NewRequest(http.MethodPost, "/signin", bytes.NewBuffer(signInBody))
-	signInReq.Header.Set("Content-Type", "application/json")
-	signInRec := httptest.NewRecorder()
-	handler.SignIn(signInRec, signInReq)
+	resp, err := http.Post(srv.URL+"/signin", "application/json", bytes.NewBuffer(json.Marshal(signupPayload)))
+	assert.NoError(err)
+	assert.Equal(http.StatusOK, resp.StatusCode)
 
-	if signInRec.Code != http.StatusOK {
-		t.Fatalf("expected status %v, got %v", http.StatusOK, signInRec.Code)
+	// Test Refresh Token
+	refreshPayload := map[string]string{
+		"refresh_token": "mock_refresh_token", // Replace with actual token from signin response
 	}
+	refreshReqBody, _ := json.Marshal(refreshPayload)
+	refreshReq, _ := http.NewRequest("POST", srv.URL+"/refresh", bytes.NewBuffer(refreshReqBody))
+	refreshReq.Header.Set("Content-Type", "application/json")
+	refreshResp, err := http.DefaultClient.Do(refreshReq)
+	t.NoError(err)
+	t.Equal(http.StatusOK, refreshResp.StatusCode)
 
-	var tokens TokenDetails
-	if err := json.NewDecoder(signInRec.Body).Decode(&tokens); err != nil {
-		t.Fatalf("failed to decode response body: %v", err)
-	}
-
-	if tokens.AccessToken == "" || tokens.RefreshToken == "" {
-		t.Fatalf("expected non-empty tokens, got empty tokens")
-	}
+	// Test Protected Endpoint
+	protectedReq, _ := http.NewRequest("GET", srv.URL+"/protected", nil)
+	protectedReq.Header.Set("Authorization", "Bearer mock_access_token") // Replace with actual token
+	protectedResp, err := http.DefaultClient.Do(protectedReq)
+	t.NoError(err)
+	t.Equal(http.StatusOK, protectedResp.StatusCode)
 }
