@@ -4,14 +4,41 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 
 	"my-go-project/pkg/auth"
 )
 
 func main() {
-	// Initialize AuthService and AuthHandler
-	secretKey := "your-secret-key" // Replace with dynamic secret fetching
-	authService := &auth.AuthServiceImpl{SecretKey: secretKey}
+	// Load secret key from AWS Secrets Manager
+	secretsManager, err := auth.NewSecretsManager()
+	if err != nil {
+		log.Fatalf("Failed to initialize Secrets Manager: %v", err)
+	}
+
+	secrets, err := secretsManager.GetSecret("auth-module-secrets")
+	if err != nil {
+		log.Fatalf("Failed to fetch secrets: %v", err)
+	}
+
+	secretKey, exists := secrets["JWT_SECRET"]
+	if !exists {
+		log.Fatalf("JWT_SECRET not found in secrets")
+	}
+
+	// Load token expiration from environment variables (default to 1 hour)
+	accessTokenExpiry := 3600 // Default 1 hour in seconds
+	if val, exists := os.LookupEnv("ACCESS_TOKEN_EXPIRY"); exists {
+		if parsedVal, err := strconv.Atoi(val); err == nil {
+			accessTokenExpiry = parsedVal
+		}
+	}
+
+	authService := &auth.AuthServiceImpl{
+		SecretKey:         secretKey,
+		AccessTokenExpiry: accessTokenExpiry,
+	}
 	authHandler := &auth.AuthHandler{Service: authService}
 	authMiddleware := &auth.AuthMiddleware{Service: authService}
 

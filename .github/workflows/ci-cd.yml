@@ -46,6 +46,8 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v1
 
     - name: Build and push Docker image
+      env:
+        ACCESS_TOKEN_EXPIRY: 3600 # Default token expiration in seconds
       run: |
         docker build -t my-auth-module .
         docker tag my-auth-module:latest <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/my-auth-module:latest

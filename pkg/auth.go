@@ -1,30 +1,24 @@
 package auth
 
 import (
-	"time"
+	"errors"
+	"regexp"
 )
 
-// TokenDetails holds the details of access and refresh tokens.
-type TokenDetails struct {
-	AccessToken  string
-	RefreshToken string
-	AccessUUID   string
-	RefreshUUID  string
-	AtExpires    int64
-	RtExpires    int64
-}
+// ValidateSignUpInput validates the user input for sign-up.
+func ValidateSignUpInput(email, password string) error {
+	if email == "" || password == "" {
+		return errors.New("email and password cannot be empty")
+	}
 
-// User represents a user in the system.
-type User struct {
-	ID       string
-	Email    string
-	Password string
-}
+	emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+	if matched, _ := regexp.MatchString(emailRegex, email); !matched {
+		return errors.New("invalid email format")
+	}
 
-// AuthService defines the interface for authentication services.
-type AuthService interface {
-	CreateToken(userID string) (*TokenDetails, error)
-	ValidateToken(token string) (string, error)
-	HashPassword(password string) (string, error)
-	CheckPasswordHash(password, hash string) bool
+	if len(password) < 8 {
+		return errors.New("password must be at least 8 characters long")
+	}
+
+	return nil
 }

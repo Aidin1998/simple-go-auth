@@ -54,3 +54,43 @@ func TestAuthService_HashPassword(t *testing.T) {
 		t.Fatalf("expected password to match hash, but it did not")
 	}
 }
+
+func TestValidateSignUpInput(t *testing.T) {
+	tests := []struct {
+		email    string
+		password string
+		expectErr bool
+	}{
+		{"", "password123", true},
+		{"test@example.com", "", true},
+		{"invalid-email", "password123", true},
+		{"test@example.com", "short", true},
+		{"test@example.com", "validpassword", false},
+	}
+
+	for _, test := range tests {
+		err := ValidateSignUpInput(test.email, test.password)
+		if (err != nil) != test.expectErr {
+			t.Errorf("ValidateSignUpInput(%v, %v) = %v, expected error: %v", test.email, test.password, err, test.expectErr)
+		}
+	}
+}
+
+func TestAuthService_CreateToken_Expired(t *testing.T) {
+	service := &AuthServiceImpl{SecretKey: "test-secret", AccessTokenExpiry: -1}
+	userID := "test-user"
+	_, err := service.CreateToken(userID)
+	if err == nil {
+		t.Fatalf("expected error for expired token, got nil")
+	}
+}
+
+func TestAuthService_CheckPasswordHash_Invalid(t *testing.T) {
+	service := &AuthServiceImpl{}
+	password := "test-password"
+	hash, _ := service.HashPassword(password)
+
+	if service.CheckPasswordHash("wrong-password", hash) {
+		t.Fatalf("expected password mismatch, but got match")
+	}
+}

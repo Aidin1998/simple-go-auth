@@ -9,13 +9,14 @@ import (
 
 // AuthServiceImpl implements the AuthService interface.
 type AuthServiceImpl struct {
-	SecretKey string
+	SecretKey         string
+	AccessTokenExpiry int // Token expiration in seconds
 }
 
 // CreateToken generates access and refresh tokens for a user.
 func (a *AuthServiceImpl) CreateToken(userID string) (*TokenDetails, error) {
 	td := &TokenDetails{}
-	td.AtExpires = time.Now().Add(15 * time.Minute).Unix()
+	td.AtExpires = time.Now().Add(time.Duration(a.AccessTokenExpiry) * time.Second).Unix()
 	td.AccessUUID = userID + "-access"
 	td.RtExpires = time.Now().Add(7 * 24 * time.Hour).Unix()
 	td.RefreshUUID = userID + "-refresh"
