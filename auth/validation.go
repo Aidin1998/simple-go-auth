@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func ValidateSignUpInputValidation(email, password string) error {
+func ValidateSignUpInput(email, password string) error {
 	// Validate email format
 	emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 	matched, _ := regexp.MatchString(emailRegex, email)
