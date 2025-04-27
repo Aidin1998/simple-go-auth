@@ -161,21 +161,20 @@ func isValidEmail(email string) bool {
 
 func TestValidateSignUpInput(t *testing.T) {
 	tests := []struct {
-		email     string
-		password  string
-		expectErr bool
+		email       string
+		password    string
+		expectError bool
 	}{
-		{"", "password123", true},
-		{"test@example.com", "", true},
+		{"valid.email@example.com", "password123", false},
 		{"invalid-email", "password123", true},
-		{"test@example.com", "short", true},
-		{"test@example.com", "validpassword", false},
+		{"another-invalid-email@", "password123", true},
+		{"valid.email@example.com", "short", true},
 	}
 
 	for _, test := range tests {
 		err := ValidateSignUpInput(test.email, test.password)
-		if (err != nil) != test.expectErr {
-			t.Errorf("ValidateSignUpInput(%v, %v) = %v, expected error: %v", test.email, test.password, err, test.expectErr)
+		if (err != nil) != test.expectError {
+			t.Errorf("ValidateSignUpInput(%v, %v) = %v, expected error: %v", test.email, test.password, err, test.expectError)
 		}
 	}
 }

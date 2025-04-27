@@ -31,8 +31,10 @@ func main() {
 	// Load token expiration from environment variables (default to 1 hour)
 	accessTokenExpiry := 3600 // Default 1 hour in seconds
 	if val, exists := os.LookupEnv("ACCESS_TOKEN_EXPIRY"); exists {
-		if parsedVal, err := strconv.Atoi(val); err == nil {
+		if parsedVal, err := strconv.Atoi(val); err == nil && parsedVal > 0 {
 			accessTokenExpiry = parsedVal
+		} else {
+			log.Fatalf("Invalid ACCESS_TOKEN_EXPIRY value: %v", val)
 		}
 	}
 
