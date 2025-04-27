@@ -2,6 +2,8 @@ package tests
 
 import (
 	"errors"
+	"os"
+	"regexp"
 	"testing"
 	"time"
 )
@@ -155,8 +157,10 @@ func ValidateSignUpInput(email, password string) error {
 }
 
 func isValidEmail(email string) bool {
-	// Simple email validation logic
-	return len(email) >= 3 && email[len(email)-1] != '@'
+	// Updated email validation logic to match validation.go
+	emailRegex := `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`
+	re := regexp.MustCompile(emailRegex)
+	return re.MatchString(email)
 }
 
 func TestValidateSignUpInput(t *testing.T) {
@@ -194,4 +198,10 @@ func TestAuthService_Logout(t *testing.T) {
 	if err != nil && !errors.Is(err, ErrTokenNotFound) {
 		t.Fatalf("expected no error or token not found error, got %v", err)
 	}
+}
+
+// TestMain ensures graceful test execution even if no tests are found.
+func TestMain(m *testing.M) {
+	code := m.Run()
+	os.Exit(code)
 }
