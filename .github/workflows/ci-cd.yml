@@ -10,7 +10,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      IMAGE_URI: 381792517210.dkr.ecr.ap-southeast-2.amazonaws.com/simple-go-auth
+      IMAGE_URI: 381792517210.dkr.ecr.ap-southeast-2.amazonaws.com/aidin/simple-go-auth
 
     steps:
     - name: Checkout repository
