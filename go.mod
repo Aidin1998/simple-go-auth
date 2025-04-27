@@ -1,3 +1,3 @@
-module github.com/Aidin1998/simple-go-auth
+module github.com/your-username/my-go-project
 
-go 1.22
+go 1.21
