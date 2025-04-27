@@ -7,11 +7,12 @@ import (
 	"os"
 	"strconv"
 
-	"my-go-project/pkg/auth"
+	"my-go-project/auth"
 )
 
 func main() {
 	// Load secret key from AWS Secrets Manager
+	// Initialize Secrets Manager and fetch secrets
 	secretsManager, err := auth.NewSecretsManager()
 	if err != nil {
 		log.Fatalf("Failed to initialize Secrets Manager: %v", err)
