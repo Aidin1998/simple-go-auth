@@ -85,7 +85,7 @@ func TestAuthService_CreateToken_InvalidSecret(t *testing.T) {
 }
 
 func TestAuthService_ValidateToken(t *testing.T) {
-	service := &AuthServiceImpl{SecretKey: "test-secret"} // Ensure service is properly initialized
+	service := &AuthServiceImpl{SecretKey: "test-secret", AccessTokenExpiry: 3600} // Ensure valid expiry
 	userID := "test-user"
 	tokens, err := service.CreateToken(userID)
 	if err != nil {
