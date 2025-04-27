@@ -42,7 +42,7 @@ jobs:
 
     - name: Build, tag, and push Docker image
       run: |
-        docker build -t $IMAGE_URI:latest ./simple-go-auth
+        docker build -t $IMAGE_URI:latest .
         docker push $IMAGE_URI:latest
 
     - name: Deploy to Amazon ECS
