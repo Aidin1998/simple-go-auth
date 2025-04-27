@@ -85,17 +85,20 @@ func TestAuthService_CreateToken_InvalidSecret(t *testing.T) {
 }
 
 func TestAuthService_ValidateToken(t *testing.T) {
-	service := &AuthServiceImpl{SecretKey: "test-secret"}
+	service := &AuthServiceImpl{SecretKey: "test-secret"} // Ensure service is properly initialized
 	userID := "test-user"
-	tokens, _ := service.CreateToken(userID)
+	tokens, err := service.CreateToken(userID)
+	if err != nil {
+		t.Fatalf("Failed to create token: %v", err)
+	}
 
 	validatedUserID, err := service.ValidateToken(tokens.AccessToken)
 	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
+		t.Fatalf("Expected no error, got %v", err)
 	}
 
 	if validatedUserID != userID {
-		t.Fatalf("expected userID %v, got %v", userID, validatedUserID)
+		t.Fatalf("Expected userID %v, got %v", userID, validatedUserID)
 	}
 }
 
