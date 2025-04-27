@@ -1,28 +1,33 @@
-# Ignore Git files
-.git
-.gitignore
+# Ignore everything except essential build files
 
-# Ignore GitHub workflows (not needed inside Docker image)
+# Ignore GitHub stuff
 .github/
 
-# Ignore Docker files themselves
-Dockerfile
-docker-compose.yml
+# Ignore test files
+tests/
 
-# Ignore local test files
-/tests/
-
-# Ignore local Go build artifacts
-/tmp/
-*.out
-
-# Ignore Go mod cache (only need compiled binary inside container)
-go.sum
-
-# Ignore editor and system files
+# Ignore editor configs
 .vscode/
 .idea/
-*.swp
 
-# Ignore built binaries
-main
+# Ignore output binaries
+bin/
+*.out
+*.exe
+
+# Ignore cache
+*.log
+tmp/
+temp/
+*.tmp
+
+# But keep go.mod and go.sum
+# (do NOT ignore them!)
+
+# Ignore Docker artifacts
+.dockerignore
+Dockerfile
+
+# Ignore system files
+.DS_Store
+Thumbs.db
