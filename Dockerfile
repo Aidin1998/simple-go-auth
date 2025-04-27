@@ -6,12 +6,14 @@ FROM golang:1.22-alpine AS builder
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+# Ensure go.mod and go.sum are copied correctly
+COPY go.mod go.sum /app/
+
 RUN go mod download
 
 COPY . ./
 RUN go mod tidy
-RUN go build -o main ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/main.go
 
 
 # Stage 2: Production
