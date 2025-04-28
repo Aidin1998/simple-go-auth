@@ -12,7 +12,6 @@ import (
 
 func main() {
 	// Load secret key from AWS Secrets Manager
-	// Initialize Secrets Manager and fetch secrets
 	secretsManager, err := auth.NewSecretsManager()
 	if err != nil {
 		log.Fatalf("Failed to initialize Secrets Manager: %v", err)
@@ -54,6 +53,12 @@ func main() {
 		w.Write([]byte("This is a protected route"))
 	})))
 
-	fmt.Println("Server running on port 8080...")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	// Use PORT environment variable or default to 80
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "80"
+	}
+
+	fmt.Printf("Server running on port %s...\n", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
