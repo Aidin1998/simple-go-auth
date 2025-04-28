@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// AuthHandler handles authentication-related HTTP requests.
 type AuthHandler struct {
 	Service *AuthServiceImpl
 }
