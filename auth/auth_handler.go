@@ -3,11 +3,22 @@ package auth
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/labstack/echo/v4"
 )
 
 // AuthHandler handles authentication-related HTTP requests.
 type AuthHandler struct {
 	Service *AuthServiceImpl
+}
+
+func NewHandler() *AuthHandler {
+	return &AuthHandler{}
+}
+
+// Ping returns pong.
+func (h *AuthHandler) Ping(c echo.Context) error {
+	return c.String(200, "pong")
 }
 
 func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
