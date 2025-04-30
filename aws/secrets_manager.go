@@ -1,4 +1,4 @@
-package auth
+package aws
 
 import (
 	"context"
@@ -9,8 +9,22 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 )
 
+// SecretsManager defines the interface for managing secrets.
+type SecretsManager interface {
+	GetSecret(name string) (string, error)
+	GetJWTSecret() (string, error)
+}
+
+// AWSSecretsManager is the concrete implementation of SecretsManager using AWS Secrets Manager.
+type AWSSecretsManager struct{}
+
+// NewAWSSecretsManager creates a new instance of AWSSecretsManager.
+func NewAWSSecretsManager() *AWSSecretsManager {
+	return &AWSSecretsManager{}
+}
+
 // GetSecret retrieves a secret value from AWS Secrets Manager.
-func GetSecret(secretName string) (string, error) {
+func (a *AWSSecretsManager) GetSecret(secretName string) (string, error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		return "", errors.New("unable to load AWS SDK config: " + err.Error())
@@ -34,7 +48,10 @@ func GetSecret(secretName string) (string, error) {
 }
 
 // GetJWTSecret retrieves the JWT secret key from AWS Secrets Manager.
-func GetJWTSecret() (string, error) {
+func (a *AWSSecretsManager) GetJWTSecret() (string, error) {
 	secretName := "jwtSecretKey" // Replace with your actual secret name
-	return GetSecret(secretName)
+	return a.GetSecret(secretName)
 }
+
+// Compile-time assertion to ensure AWSSecretsManager implements SecretsManager.
+var _ SecretsManager = (*AWSSecretsManager)(nil)

@@ -8,23 +8,15 @@ import (
 	"strconv"
 
 	"my-go-project/auth"
+	"my-go-project/aws"
 )
 
 func main() {
 	// Load secret key from AWS Secrets Manager
-	secretsManager, err := auth.NewSecretsManager()
+	secretsManager := aws.NewAWSSecretsManager()
+	secretKey, err := secretsManager.GetJWTSecret()
 	if err != nil {
-		log.Fatalf("Failed to initialize Secrets Manager: %v", err)
-	}
-
-	secrets, err := secretsManager.GetSecret("auth-module-secrets")
-	if err != nil {
-		log.Fatalf("Failed to fetch secrets: %v", err)
-	}
-
-	secretKey, exists := secrets["JWT_SECRET"]
-	if !exists {
-		log.Fatalf("JWT_SECRET not found in secrets")
+		log.Fatalf("Failed to fetch JWT secret: %v", err)
 	}
 
 	// Load token expiration from environment variables (default to 1 hour)
