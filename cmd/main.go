@@ -44,6 +44,13 @@ func main() {
 	authHandler := &auth.AuthHandler{Service: authService}
 	authMiddleware := &auth.AuthMiddleware{Service: authService}
 
+	// === New root handler ===
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("🚀 Welcome to BitPolaris! Please POST to /signin or /signup"))
+	})
+
+	// Existing endpoints
 	http.HandleFunc("/signup", authHandler.SignUp)
 	http.HandleFunc("/signin", authHandler.SignIn)
 	http.HandleFunc("/logout", authHandler.SignOut)
