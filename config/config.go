@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Port              string // default "80"
 	AWSRegion         string // default "ap-southeast-2"
+	Env               string // add this
 	DBHost            string
 	DBUser            string
 	DBPassword        string
@@ -30,6 +31,7 @@ func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		Port:              viper.GetString("PORT"),
 		AWSRegion:         viper.GetString("AWS_REGION"),
+		Env:               viper.GetString("ENV"), // add this
 		DBHost:            viper.GetString("DB_HOST"),
 		DBUser:            viper.GetString("DB_USER"),
 		DBPassword:        viper.GetString("DB_PASSWORD"),
@@ -47,6 +49,9 @@ func LoadConfig() (*Config, error) {
 	}
 	if cfg.AWSRegion == "" {
 		cfg.AWSRegion = "ap-southeast-2"
+	}
+	if cfg.Env == "" {
+		cfg.Env = "production" // set default to "production"
 	}
 	if cfg.AccessTokenExpiry == 0 {
 		cfg.AccessTokenExpiry = 3600

@@ -20,8 +20,13 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// 2. Fetch JWT secret via AWS SecretsManager
-	sm := aws.NewAWSSecretsManager(cfg.AWSRegion)
+	// 2. Fetch JWT secret via SecretsManager
+	var sm aws.SecretsManager
+	if cfg.Env == "dev" {
+		sm = aws.NewLocalSecretsManager()
+	} else {
+		sm = aws.NewAWSSecretsManager(cfg.AWSRegion)
+	}
 	jwtSecret, err := sm.GetJWTSecret()
 	if err != nil {
 		log.Fatalf("Failed to fetch JWT secret: %v", err)
