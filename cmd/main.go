@@ -19,9 +19,13 @@ func main() {
 	}
 
 	// 2. Initialize Cognito client
-	cognitoClient, err := aws.NewCognitoClient(cfg)
+	cognitoClient, err := aws.NewCognitoClient(
+		cfg.AWSRegion,
+		cfg.CognitoUserPoolID,
+		cfg.CognitoAppClientID,
+	)
 	if err != nil {
-		log.Fatalf("Cognito init error: %v", err)
+		log.Fatalf("Failed to initialize Cognito client: %v", err)
 	}
 
 	// 3. Build the auth service, handlers & middleware

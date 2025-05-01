@@ -3,10 +3,11 @@ package auth
 import (
 	"context"
 	"errors"
+
 	"my-go-project/aws"
 )
 
-// AuthTokens holds the tokens returned by Cognito.
+// AuthTokens represents the tokens returned after authentication.
 type AuthTokens struct {
 	AccessToken  string `json:"access_token"`
 	IdToken      string `json:"id_token"`
@@ -15,14 +16,14 @@ type AuthTokens struct {
 	TokenType    string `json:"token_type"`
 }
 
-// AuthServiceImpl implements authentication via Cognito.
+// AuthServiceImpl implements the authentication service using Cognito.
 type AuthServiceImpl struct {
 	CognitoClient *aws.CognitoClient
 }
 
-// NewAuthServiceImpl constructs a new AuthServiceImpl.
-func NewAuthServiceImpl(c *aws.CognitoClient) *AuthServiceImpl {
-	return &AuthServiceImpl{CognitoClient: c}
+// NewAuthServiceImpl creates a new instance of AuthServiceImpl.
+func NewAuthServiceImpl(client *aws.CognitoClient) *AuthServiceImpl {
+	return &AuthServiceImpl{CognitoClient: client}
 }
 
 // SignUp registers a new user in Cognito.
@@ -30,21 +31,21 @@ func (s *AuthServiceImpl) SignUp(ctx context.Context, username, password, email 
 	return s.CognitoClient.SignUp(ctx, username, password, email)
 }
 
-// SignIn authenticates a user and returns their token set.
+// SignIn authenticates a user and returns their tokens.
 func (s *AuthServiceImpl) SignIn(ctx context.Context, username, password string) (*AuthTokens, error) {
 	out, err := s.CognitoClient.SignIn(ctx, username, password)
 	if err != nil {
 		return nil, err
 	}
-	if out.AuthenticationResult == nil {
-		return nil, errors.New("no auth result")
-	}
 	ar := out.AuthenticationResult
+	if ar == nil {
+		return nil, errors.New("authentication failed: no result returned")
+	}
 	return &AuthTokens{
 		AccessToken:  *ar.AccessToken,
 		IdToken:      *ar.IdToken,
 		RefreshToken: *ar.RefreshToken,
-		ExpiresIn:    int64(*ar.ExpiresIn),
+		ExpiresIn:    int64(ar.ExpiresIn),
 		TokenType:    *ar.TokenType,
 	}, nil
 }
@@ -54,9 +55,8 @@ func (s *AuthServiceImpl) SignOut(ctx context.Context, accessToken string) error
 	return s.CognitoClient.SignOut(ctx, accessToken)
 }
 
-// ValidateToken validates the provided token.
-func (svc *AuthServiceImpl) ValidateToken(ctx context.Context, token string) error {
-	// Implement token validation logic here
-	// Return nil if the token is valid, or an error if it is invalid
-	return nil
+// ValidateToken checks the access token via Cognito GetUser API.
+func (s *AuthServiceImpl) ValidateToken(ctx context.Context, token string) error {
+	_, err := s.CognitoClient.GetUser(ctx, token)
+	return err
 }

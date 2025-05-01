@@ -3,7 +3,6 @@ package aws
 import (
 	"context"
 	"errors"
-	"my-go-project/config"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	sdkconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -11,22 +10,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 )
 
-type CognitoClient struct {
-	Client      *cognitoidentityprovider.Client
-	Region      string
-	UserPoolID  string
-	AppClientID string
-}
-
-// Existing methods of CognitoClient
-
 // ValidateToken validates a token using Cognito.
 func (c *CognitoClient) ValidateToken(token string) (bool, error) {
 	input := &cognitoidentityprovider.GetUserInput{
 		AccessToken: aws.String(token),
 	}
 
-	_, err := c.Client.GetUser(context.TODO(), input)
+	_, err := c.client.GetUser(context.TODO(), input)
 	if err != nil {
 		return false, errors.New("invalid token")
 	}
@@ -79,37 +69,6 @@ func (a *AWSSecretsManager) GetJWTSecret() (string, error) {
 // Compile-time check that AWSSecretsManager implements SecretsManager.
 var _ SecretsManager = (*AWSSecretsManager)(nil)
 
-func NewCognitoClient(cfg *config.Config) (*CognitoClient, error) {
-	if cfg.AWSRegion == "" || cfg.CognitoUserPoolID == "" || cfg.CognitoAppClientID == "" {
-		return nil, errors.New("missing required Cognito configuration")
-	}
-
-	return &CognitoClient{
-		Region:      cfg.AWSRegion,
-		UserPoolID:  cfg.CognitoUserPoolID,
-		AppClientID: cfg.CognitoAppClientID,
-	}, nil
-}
-
-// SignIn authenticates a user with Cognito.
-func (c *CognitoClient) SignIn(ctx context.Context, username, password string) (*SignInOutput, error) {
-	// Placeholder implementation for SignIn
-	if username == "" || password == "" {
-		return nil, errors.New("username or password cannot be empty")
-	}
-
-	// Mock response for demonstration purposes
-	return &SignInOutput{
-		AuthenticationResult: &AuthenticationResult{
-			AccessToken:  stringPtr("mockAccessToken"),
-			IdToken:      stringPtr("mockIdToken"),
-			RefreshToken: stringPtr("mockRefreshToken"),
-			ExpiresIn:    int64Ptr(3600),
-			TokenType:    stringPtr("Bearer"),
-		},
-	}, nil
-}
-
 // Helper functions for mock data
 func stringPtr(s string) *string {
 	return &s
@@ -131,25 +90,4 @@ type AuthenticationResult struct {
 	RefreshToken *string
 	ExpiresIn    *int64
 	TokenType    *string
-}
-
-// SignUp registers a new user in Cognito.
-func (c *CognitoClient) SignUp(ctx context.Context, username, password, email string) error {
-	// Placeholder logic for Cognito SignUp
-	if username == "" || password == "" || email == "" {
-		return errors.New("username, password, and email cannot be empty")
-	}
-	// Simulate successful signup
-	return nil
-}
-
-// SignOut revokes a user's session in Cognito.
-func (c *CognitoClient) SignOut(ctx context.Context, accessToken string) error {
-	// Implement the logic to revoke the session using AWS Cognito SDK.
-	// Example placeholder logic:
-	if accessToken == "" {
-		return errors.New("access token cannot be empty")
-	}
-	// Assume successful sign-out for now.
-	return nil
 }
