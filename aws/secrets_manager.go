@@ -5,53 +5,57 @@ import (
 	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
+	sdkconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 )
 
-// SecretsManager defines the interface for managing secrets.
+// SecretsManager defines the interface for fetching secrets.
 type SecretsManager interface {
 	GetSecret(name string) (string, error)
 	GetJWTSecret() (string, error)
 }
 
-// AWSSecretsManager is the concrete implementation of SecretsManager using AWS Secrets Manager.
-type AWSSecretsManager struct{}
+// AWSSecretsManager is the AWS-backed implementation.
+type AWSSecretsManager struct {
+	region string
+}
 
-// NewAWSSecretsManager creates a new instance of AWSSecretsManager.
-func NewAWSSecretsManager() *AWSSecretsManager {
-	return &AWSSecretsManager{}
+// NewAWSSecretsManager creates a SecretsManager for the given AWS region.
+func NewAWSSecretsManager(region string) *AWSSecretsManager {
+	return &AWSSecretsManager{region: region}
 }
 
 // GetSecret retrieves a secret value from AWS Secrets Manager.
 func (a *AWSSecretsManager) GetSecret(secretName string) (string, error) {
-	cfg, err := config.LoadDefaultConfig(context.TODO())
+	// Load AWS SDK config with the specified region
+	cfg, err := sdkconfig.LoadDefaultConfig(context.TODO(),
+		sdkconfig.WithRegion(a.region),
+	)
 	if err != nil {
 		return "", errors.New("unable to load AWS SDK config: " + err.Error())
 	}
 
+	// Create a Secrets Manager client
 	client := secretsmanager.NewFromConfig(cfg)
-	input := &secretsmanager.GetSecretValueInput{
-		SecretId: aws.String(secretName),
-	}
 
-	result, err := client.GetSecretValue(context.TODO(), input)
+	// Fetch the secret
+	output, err := client.GetSecretValue(context.TODO(), &secretsmanager.GetSecretValueInput{
+		SecretId: aws.String(secretName),
+	})
 	if err != nil {
 		return "", errors.New("unable to retrieve secret: " + err.Error())
 	}
-
-	if result.SecretString == nil {
+	if output.SecretString == nil {
 		return "", errors.New("secret value is empty")
 	}
-
-	return *result.SecretString, nil
+	return *output.SecretString, nil
 }
 
 // GetJWTSecret retrieves the JWT secret key from AWS Secrets Manager.
 func (a *AWSSecretsManager) GetJWTSecret() (string, error) {
-	secretName := "jwtSecretKey" // Replace with your actual secret name
-	return a.GetSecret(secretName)
+	const jwtSecretName = "jwtSecretKey" // change this to your actual secret name
+	return a.GetSecret(jwtSecretName)
 }
 
-// Compile-time assertion to ensure AWSSecretsManager implements SecretsManager.
+// Compile-time check that AWSSecretsManager implements SecretsManager.
 var _ SecretsManager = (*AWSSecretsManager)(nil)

@@ -1,22 +1,56 @@
+// config/config.go
 package config
 
-import "github.com/spf13/viper"
+import (
+	"time"
+
+	"github.com/spf13/viper"
+)
 
 type Config struct {
-	Port string
+	Port              string // default "80"
+	AWSRegion         string // default "ap-southeast-2"
+	DBHost            string
+	DBUser            string
+	DBPassword        string
+	DBName            string
+	AccessTokenExpiry int           // default 3600
+	DBMaxOpenConns    int           // max open DB connections
+	DBMaxIdleConns    int           // max idle DB connections
+	DBConnMaxLifetime time.Duration // max connection lifetime
+	JWTSecret         string        // populated at startup from AWS
 }
 
-// LoadConfig reads .env and environment variables.
-// Defaults PORT to "80" if unset to match our AWS/domain.
+// LoadConfig reads .env and environment variables into Config.
 func LoadConfig() (*Config, error) {
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
 	_ = viper.ReadInConfig()
 
-	port := viper.GetString("PORT")
-	if port == "" {
-		port = "80" // Default to port 80 to match our AWS/domain.
+	cfg := &Config{
+		Port:              viper.GetString("PORT"),
+		AWSRegion:         viper.GetString("AWS_REGION"),
+		DBHost:            viper.GetString("DB_HOST"),
+		DBUser:            viper.GetString("DB_USER"),
+		DBPassword:        viper.GetString("DB_PASSWORD"),
+		DBName:            viper.GetString("DB_NAME"),
+		AccessTokenExpiry: viper.GetInt("ACCESS_TOKEN_EXPIRY"),
+		DBMaxOpenConns:    viper.GetInt("DB_MAX_OPEN_CONNS"),
+		DBMaxIdleConns:    viper.GetInt("DB_MAX_IDLE_CONNS"),
+		DBConnMaxLifetime: viper.GetDuration("DB_CONN_MAX_LIFETIME"),
+		JWTSecret:         "", // will be fetched from AWS
 	}
 
-	return &Config{Port: port}, nil
+	// Fallback defaults
+	if cfg.Port == "" {
+		cfg.Port = "80"
+	}
+	if cfg.AWSRegion == "" {
+		cfg.AWSRegion = "ap-southeast-2"
+	}
+	if cfg.AccessTokenExpiry == 0 {
+		cfg.AccessTokenExpiry = 3600
+	}
+
+	return cfg, nil
 }

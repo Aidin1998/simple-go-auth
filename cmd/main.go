@@ -3,8 +3,6 @@ package main
 
 import (
 	"log"
-	"net/http"
-
 	"os"
 
 	"github.com/labstack/echo/v4"
@@ -22,20 +20,22 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// 2. Get JWT secret
-	sm := aws.NewAWSSecretsManager()
+	// 2. Fetch JWT secret via AWS SecretsManager
+	sm := aws.NewAWSSecretsManager(cfg.AWSRegion)
 	jwtSecret, err := sm.GetJWTSecret()
 	if err != nil {
 		log.Fatalf("Failed to fetch JWT secret: %v", err)
 	}
+	// Store for downstream use and env-compatibility
+	cfg.JWTSecret = jwtSecret
 	os.Setenv("JWT_SECRET", jwtSecret)
 
-	// 3. Setup Echo
+	// 3. Setup Echo router
 	router := httpPkg.SetupRouter()
 
-	// 4. Root route for health-checks & welcome
+	// 4. Root route (health-check & welcome)
 	router.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK,
+		return c.String(200,
 			"🚀 Welcome to BitPolaris! Please POST to /signin or /signup")
 	})
 
