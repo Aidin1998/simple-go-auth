@@ -8,6 +8,7 @@ import (
 	"my-go-project/auth"
 	"my-go-project/aws"
 	"my-go-project/config"
+	"my-go-project/db"
 	httpPkg "my-go-project/http"
 )
 
@@ -16,6 +17,12 @@ func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	// Initialize Postgres via GORM
+	dbInstance, err := db.InitDB(cfg)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
 	// 2. Initialize Cognito client
@@ -29,7 +36,7 @@ func main() {
 	}
 
 	// 3. Build the auth service, handlers & middleware
-	authService := auth.NewAuthServiceImpl(cognitoClient)
+	authService := auth.NewAuthServiceImpl(cognitoClient, dbInstance)
 	authHandler := auth.NewHandler(authService)
 	authMiddleware := auth.NewMiddleware(authService)
 

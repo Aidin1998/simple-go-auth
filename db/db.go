@@ -2,39 +2,29 @@ package db
 
 import (
 	"fmt"
-
 	"my-go-project/config"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-// User represents the user model for the database.
-type User struct {
-	ID       uint   `gorm:"primaryKey"`
-	Username string `gorm:"unique;not null"`
-	Email    string `gorm:"unique;not null"`
-	Password string `gorm:"not null"`
-}
-
-func OpenDatabase(cfg *config.Config) (*gorm.DB, error) {
-	// Build DSN from cfg
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable",
-		cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName)
-
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+// InitDB opens a Postgres connection and configures the pool.
+func InitDB(cfg *config.Config) (*gorm.DB, error) {
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s sslmode=disable",
+		cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName,
+	)
+	gormDB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
-
-	// Configure GORM connection pools
-	sqlDB, err := db.DB()
+	sqlDB, err := gormDB.DB()
 	if err != nil {
 		return nil, err
 	}
 	sqlDB.SetMaxOpenConns(cfg.DBMaxOpenConns)
 	sqlDB.SetMaxIdleConns(cfg.DBMaxIdleConns)
-	sqlDB.SetConnMaxLifetime(cfg.DBConnMaxLifetime)
-
-	return db, nil
+	sqlDB.SetConnMaxLifetime(cfg.DBConnMaxLifetime * time.Second)
+	return gormDB, nil
 }
