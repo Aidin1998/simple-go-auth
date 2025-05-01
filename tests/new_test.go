@@ -7,58 +7,19 @@ import (
 )
 
 // AuthServiceImpl represents a mock implementation of the authentication service.
-type AuthServiceImpl struct {
-	SecretKey         string
-	AccessTokenExpiry int64
-}
+// AuthServiceImpl is already defined in auth_test.go, so it is removed here.
 
-// CreateToken generates mock access and refresh tokens.
-func (a *AuthServiceImpl) CreateToken(userID string) (*Tokens, error) {
-	now := time.Now().Unix()
-	return &Tokens{
-		AccessToken:  "mock-access-token",
-		RefreshToken: "mock-refresh-token",
-		AtExpires:    now + a.AccessTokenExpiry,
-		RtExpires:    now + a.AccessTokenExpiry*2,
-	}, nil
-}
+// Removed duplicate CreateToken method to avoid conflict with auth_test.go.
 
-// ValidateToken validates a mock token.
-func (a *AuthServiceImpl) ValidateToken(token string) (string, error) {
-	if token == "mock-access-token" {
-		return "test-user", nil
-	}
-	return "", errors.New("invalid token")
-}
+// Removed duplicate ValidateToken method to avoid conflict with auth_test.go.
 
-// HashPassword hashes a password (mock implementation).
-func (a *AuthServiceImpl) HashPassword(password string) (string, error) {
-	return "mock-hash", nil
-}
+// Removed duplicate CheckPasswordHash method to avoid conflict with auth_test.go.
 
-// CheckPasswordHash checks if a password matches a hash (mock implementation).
-func (a *AuthServiceImpl) CheckPasswordHash(password, hash string) bool {
-	return password == "test-password" && hash == "mock-hash"
-}
+// Removed duplicate Logout method to avoid conflict with auth_test.go.
 
-// Logout logs out a user (mock implementation).
-func (a *AuthServiceImpl) Logout(token string) error {
-	if token == "test-token" {
-		return nil
-	}
-	return ErrTokenNotFound
-}
+// Removed duplicate Tokens struct to avoid conflict with auth_test.go.
 
-// Tokens represents the structure for access and refresh tokens.
-type Tokens struct {
-	AccessToken  string
-	RefreshToken string
-	AtExpires    int64
-	RtExpires    int64
-}
-
-// ErrTokenNotFound is a mock error for token not found.
-var ErrTokenNotFound = errors.New("token not found")
+// Removed duplicate ErrTokenNotFound to avoid conflict with auth_test.go.
 
 func TestAuthService_CreateToken_Success(t *testing.T) {
 	service := &AuthServiceImpl{SecretKey: "test-secret", AccessTokenExpiry: 3600}
@@ -137,24 +98,7 @@ func TestAuthService_Logout_Success(t *testing.T) {
 	}
 }
 
-// ValidateSignUpInput validates the email and password for sign-up.
-func ValidateSignUpInput(email, password string) error {
-	if email == "" || password == "" {
-		return errors.New("email and password must not be empty")
-	}
-	if len(password) < 6 {
-		return errors.New("password must be at least 6 characters long")
-	}
-	if !isValidEmail(email) {
-		return errors.New("invalid email format")
-	}
-	return nil
-}
-
-// isValidEmail checks if the email format is valid (mock implementation).
-func isValidEmail(email string) bool {
-	return len(email) > 3 && email[len(email)-4:] == ".com"
-}
+// Removed duplicate ValidateSignUpInput and isValidEmail methods to avoid conflict with auth_test.go.
 
 func TestValidateSignUpInput_Success(t *testing.T) {
 	err := ValidateSignUpInput("valid.email@example.com", "password123")
