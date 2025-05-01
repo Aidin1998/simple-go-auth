@@ -8,18 +8,20 @@ import (
 )
 
 type Config struct {
-	Port              string // default "80"
-	AWSRegion         string // default "ap-southeast-2"
-	Env               string // add this
-	DBHost            string
-	DBUser            string
-	DBPassword        string
-	DBName            string
-	AccessTokenExpiry int           // default 3600
-	DBMaxOpenConns    int           // max open DB connections
-	DBMaxIdleConns    int           // max idle DB connections
-	DBConnMaxLifetime time.Duration // max connection lifetime
-	JWTSecret         string        // populated at startup from AWS
+	Port               string // default "80"
+	AWSRegion          string // default "ap-southeast-2"
+	Env                string // add this
+	DBHost             string
+	DBUser             string
+	DBPassword         string
+	DBName             string
+	AccessTokenExpiry  int           // default 3600
+	DBMaxOpenConns     int           // max open DB connections
+	DBMaxIdleConns     int           // max idle DB connections
+	DBConnMaxLifetime  time.Duration // max connection lifetime
+	JWTSecret          string        // populated at startup from AWS
+	CognitoUserPoolID  string        // COGNITO_USER_POOL_ID
+	CognitoAppClientID string        // COGNITO_APP_CLIENT_ID
 }
 
 // LoadConfig reads .env and environment variables into Config.
@@ -29,18 +31,20 @@ func LoadConfig() (*Config, error) {
 	_ = viper.ReadInConfig()
 
 	cfg := &Config{
-		Port:              viper.GetString("PORT"),
-		AWSRegion:         viper.GetString("AWS_REGION"),
-		Env:               viper.GetString("ENV"), // add this
-		DBHost:            viper.GetString("DB_HOST"),
-		DBUser:            viper.GetString("DB_USER"),
-		DBPassword:        viper.GetString("DB_PASSWORD"),
-		DBName:            viper.GetString("DB_NAME"),
-		AccessTokenExpiry: viper.GetInt("ACCESS_TOKEN_EXPIRY"),
-		DBMaxOpenConns:    viper.GetInt("DB_MAX_OPEN_CONNS"),
-		DBMaxIdleConns:    viper.GetInt("DB_MAX_IDLE_CONNS"),
-		DBConnMaxLifetime: viper.GetDuration("DB_CONN_MAX_LIFETIME"),
-		JWTSecret:         "", // will be fetched from AWS
+		Port:               viper.GetString("PORT"),
+		AWSRegion:          viper.GetString("AWS_REGION"),
+		Env:                viper.GetString("ENV"), // add this
+		DBHost:             viper.GetString("DB_HOST"),
+		DBUser:             viper.GetString("DB_USER"),
+		DBPassword:         viper.GetString("DB_PASSWORD"),
+		DBName:             viper.GetString("DB_NAME"),
+		AccessTokenExpiry:  viper.GetInt("ACCESS_TOKEN_EXPIRY"),
+		DBMaxOpenConns:     viper.GetInt("DB_MAX_OPEN_CONNS"),
+		DBMaxIdleConns:     viper.GetInt("DB_MAX_IDLE_CONNS"),
+		DBConnMaxLifetime:  viper.GetDuration("DB_CONN_MAX_LIFETIME"),
+		JWTSecret:          "", // will be fetched from AWS
+		CognitoUserPoolID:  viper.GetString("COGNITO_USER_POOL_ID"),
+		CognitoAppClientID: viper.GetString("COGNITO_APP_CLIENT_ID"),
 	}
 
 	// Fallback defaults

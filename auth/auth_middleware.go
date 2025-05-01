@@ -3,7 +3,6 @@ package auth
 import (
 	"strings"
 
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
 )
 
@@ -20,16 +19,12 @@ func (m *AuthMiddleware) Authenticate() echo.MiddlewareFunc {
 			}
 
 			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-			token, err := m.Service.ValidateToken(tokenString)
-			if err != nil || !token.Valid {
+			_, err := m.Service.ValidateToken(tokenString)
+			if err != nil {
 				return c.JSON(401, map[string]string{"error": "Invalid or expired token"})
 			}
 
-			// Add user information to the context
-			claims, ok := token.Claims.(jwt.MapClaims)
-			if ok && token.Valid {
-				c.Set("userID", claims["userID"])
-			}
+			// Additional validation for token claims can be added here if needed
 
 			return next(c)
 		}

@@ -1,9 +1,7 @@
-// cmd/main.go
 package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/labstack/echo/v4"
 
@@ -14,40 +12,44 @@ import (
 )
 
 func main() {
-	// 1. Load config (PORT defaults to "80")
+	// 1. Load configuration
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// 2. Fetch JWT secret via SecretsManager
-	var sm aws.SecretsManager
-	if cfg.Env == "dev" {
-		sm = aws.NewLocalSecretsManager()
-	} else {
-		sm = aws.NewAWSSecretsManager(cfg.AWSRegion)
-	}
-	jwtSecret, err := sm.GetJWTSecret()
+	// 2. Initialize Cognito client
+	cognitoClient, err := aws.NewCognitoClient(
+		cfg.AWSRegion,
+		cfg.CognitoUserPoolID,
+		cfg.CognitoAppClientID,
+	)
 	if err != nil {
-		log.Fatalf("Failed to fetch JWT secret: %v", err)
+		log.Fatalf("Failed to initialize Cognito client: %v", err)
 	}
-	// Store for downstream use and env-compatibility
-	cfg.JWTSecret = jwtSecret
-	os.Setenv("JWT_SECRET", jwtSecret)
 
-	// 3. Setup Echo router
+	// 3. Build the auth service, handlers & middleware
+	authService := auth.NewAuthServiceImpl(cognitoClient)
+	authHandler := auth.NewHandler()
+	authMiddleware := auth.NewMiddleware(authService)
+
+	// 4. Setup Echo router & global middleware
 	router := httpPkg.SetupRouter()
 
-	// 4. Root route (health-check & welcome)
+	// 5. Public routes
 	router.GET("/", func(c echo.Context) error {
-		return c.String(200,
-			"🚀 Welcome to BitPolaris! Please POST to /signin or /signup")
+		return c.String(200, "🚀 Welcome to BitPolaris! Please POST to /signin or /signup")
 	})
+	router.GET("/ping", authHandler.Ping)
+	router.POST("/signup", authHandler.SignUp)
+	router.POST("/signin", authHandler.SignIn)
 
-	// 5. Ping route for smoke-tests
-	router.GET("/ping", auth.NewHandler().Ping)
+	// 6. Protected route
+	protected := router.Group("")
+	protected.Use(authMiddleware)
+	protected.POST("/logout", authHandler.SignOut)
 
-	// 6. Start server
+	// 7. Start server
 	log.Printf("Server running on port %s...\n", cfg.Port)
 	log.Fatal(router.Start(":" + cfg.Port))
 }
