@@ -9,8 +9,9 @@ type AuthHandler struct {
 	Service *AuthServiceImpl
 }
 
-func NewHandler() *AuthHandler {
-	return &AuthHandler{}
+// NewHandler creates a new AuthHandler with the provided service.
+func NewHandler(svc *AuthServiceImpl) *AuthHandler {
+	return &AuthHandler{Service: svc}
 }
 
 // Ping returns pong.

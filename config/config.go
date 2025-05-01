@@ -20,8 +20,8 @@ type Config struct {
 	DBMaxIdleConns     int           // max idle DB connections
 	DBConnMaxLifetime  time.Duration // max connection lifetime
 	JWTSecret          string        // populated at startup from AWS
-	CognitoUserPoolID  string        // COGNITO_USER_POOL_ID
-	CognitoAppClientID string        // COGNITO_APP_CLIENT_ID
+	CognitoUserPoolID  string        // from COGNITO_USER_POOL_ID
+	CognitoAppClientID string        // from COGNITO_APP_CLIENT_ID
 }
 
 // LoadConfig reads .env and environment variables into Config.
@@ -59,6 +59,12 @@ func LoadConfig() (*Config, error) {
 	}
 	if cfg.AccessTokenExpiry == 0 {
 		cfg.AccessTokenExpiry = 3600
+	}
+	if cfg.CognitoUserPoolID == "" {
+		cfg.CognitoUserPoolID = ""
+	}
+	if cfg.CognitoAppClientID == "" {
+		cfg.CognitoAppClientID = ""
 	}
 
 	return cfg, nil

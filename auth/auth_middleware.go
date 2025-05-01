@@ -6,25 +6,21 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type AuthMiddleware struct {
-	Service *AuthServiceImpl
-}
-
-func (m *AuthMiddleware) Authenticate() echo.MiddlewareFunc {
+// NewMiddleware creates a middleware function for token validation.
+func NewMiddleware(svc *AuthServiceImpl) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			authHeader := c.Request().Header.Get("Authorization")
-			if authHeader == "" {
-				return c.JSON(401, map[string]string{"error": "Missing Authorization header"})
+			token := c.Request().Header.Get("Authorization")
+			if token == "" {
+				return c.NoContent(401)
 			}
 
-			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-			_, err := m.Service.ValidateToken(tokenString)
-			if err != nil {
-				return c.JSON(401, map[string]string{"error": "Invalid or expired token"})
-			}
+			// Optionally strip "Bearer " prefix
+			token = strings.TrimPrefix(token, "Bearer ")
 
-			// Additional validation for token claims can be added here if needed
+			if err := svc.ValidateToken(c.Request().Context(), token); err != nil {
+				return c.NoContent(401)
+			}
 
 			return next(c)
 		}

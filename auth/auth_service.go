@@ -3,12 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
-	"fmt"
-	"net/http"
-
 	"my-go-project/aws"
-
-	"github.com/labstack/echo/v4"
 )
 
 // AuthTokens holds the tokens returned by Cognito.
@@ -26,8 +21,8 @@ type AuthServiceImpl struct {
 }
 
 // NewAuthServiceImpl constructs a new AuthServiceImpl.
-func NewAuthServiceImpl(client *aws.CognitoClient) *AuthServiceImpl {
-	return &AuthServiceImpl{CognitoClient: client}
+func NewAuthServiceImpl(c *aws.CognitoClient) *AuthServiceImpl {
+	return &AuthServiceImpl{CognitoClient: c}
 }
 
 // SignUp registers a new user in Cognito.
@@ -42,7 +37,7 @@ func (s *AuthServiceImpl) SignIn(ctx context.Context, username, password string)
 		return nil, err
 	}
 	if out.AuthenticationResult == nil {
-		return nil, errors.New("authentication failed: no result returned")
+		return nil, errors.New("no auth result")
 	}
 	ar := out.AuthenticationResult
 	return &AuthTokens{
@@ -59,46 +54,9 @@ func (s *AuthServiceImpl) SignOut(ctx context.Context, accessToken string) error
 	return s.CognitoClient.SignOut(ctx, accessToken)
 }
 
-type AuthService interface {
-	ValidateToken(token string) (bool, error)
-}
-
-func NewMiddleware(authService AuthService) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			token := c.Request().Header.Get("Authorization")
-			if token == "" {
-				return c.JSON(http.StatusUnauthorized, map[string]string{"error": "missing token"})
-			}
-
-			valid, err := authService.ValidateToken(token)
-			if err != nil || !valid {
-				return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
-			}
-
-			return next(c)
-		}
-	}
-}
-
-// Duplicate declaration removed.
-
-// Other methods of AuthServiceImpl
-
-// ValidateToken validates a token and returns the result.
-func (a *AuthServiceImpl) ValidateToken(token string) (bool, error) {
+// ValidateToken validates the provided token.
+func (svc *AuthServiceImpl) ValidateToken(ctx context.Context, token string) error {
 	// Implement token validation logic here
-	return a.CognitoClient.ValidateToken(token)
-}
-
-// AuthServiceImpl is the implementation of the authentication service.
-// Duplicate declaration removed.
-
-// GenerateToken generates a token for the given userID.
-func (s *AuthServiceImpl) GenerateToken(userID string) (string, error) {
-	// Placeholder logic for token generation
-	if userID == "" {
-		return "", fmt.Errorf("userID cannot be empty")
-	}
-	return "mockTokenFor_" + userID, nil
+	// Return nil if the token is valid, or an error if it is invalid
+	return nil
 }

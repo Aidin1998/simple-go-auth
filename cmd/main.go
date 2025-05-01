@@ -19,18 +19,14 @@ func main() {
 	}
 
 	// 2. Initialize Cognito client
-	cognitoClient, err := aws.NewCognitoClient(
-		cfg.AWSRegion,
-		cfg.CognitoUserPoolID,
-		cfg.CognitoAppClientID,
-	)
+	cognitoClient, err := aws.NewCognitoClient(cfg)
 	if err != nil {
-		log.Fatalf("Failed to initialize Cognito client: %v", err)
+		log.Fatalf("Cognito init error: %v", err)
 	}
 
 	// 3. Build the auth service, handlers & middleware
 	authService := auth.NewAuthServiceImpl(cognitoClient)
-	authHandler := auth.NewHandler()
+	authHandler := auth.NewHandler(authService)
 	authMiddleware := auth.NewMiddleware(authService)
 
 	// 4. Setup Echo router & global middleware

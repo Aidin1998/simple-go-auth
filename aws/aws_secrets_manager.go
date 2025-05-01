@@ -3,6 +3,7 @@ package aws
 import (
 	"context"
 	"errors"
+	"my-go-project/config"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	sdkconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -78,28 +79,15 @@ func (a *AWSSecretsManager) GetJWTSecret() (string, error) {
 // Compile-time check that AWSSecretsManager implements SecretsManager.
 var _ SecretsManager = (*AWSSecretsManager)(nil)
 
-// Renamed to avoid conflict with the existing CognitoClient type
-type CognitoConfig struct {
-	Region      string
-	UserPoolID  string
-	AppClientID string
-}
-
-func NewCognitoClient(region, userPoolID, appClientID string) (*CognitoClient, error) {
-	if region == "" || userPoolID == "" || appClientID == "" {
-		return nil, errors.New("region, userPoolID, and appClientID cannot be empty")
-	}
-
-	cfg, err := sdkconfig.LoadDefaultConfig(context.TODO(), sdkconfig.WithRegion(region))
-	if err != nil {
-		return nil, errors.New("failed to load AWS SDK config: " + err.Error())
+func NewCognitoClient(cfg *config.Config) (*CognitoClient, error) {
+	if cfg.AWSRegion == "" || cfg.CognitoUserPoolID == "" || cfg.CognitoAppClientID == "" {
+		return nil, errors.New("missing required Cognito configuration")
 	}
 
 	return &CognitoClient{
-		Region:      region,
-		UserPoolID:  userPoolID,
-		AppClientID: appClientID,
-		Client:      cognitoidentityprovider.NewFromConfig(cfg),
+		Region:      cfg.AWSRegion,
+		UserPoolID:  cfg.CognitoUserPoolID,
+		AppClientID: cfg.CognitoAppClientID,
 	}, nil
 }
 
