@@ -1,27 +1,46 @@
 package tests
 
 import (
+	"os"
 	"testing"
 	"time"
 
 	"my-go-project/config"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLoadConfig(t *testing.T) {
-	// Load config from .env.sample or construct manually
-	cfg := &config.Config{
-		Port:              "8080",
-		AWSRegion:         "us-west-2",
-		DBHost:            "localhost",
-		DBUser:            "testuser",
-		DBPassword:        "testpassword",
-		DBName:            "testdb",
-		DBMaxOpenConns:    10,
-		DBMaxIdleConns:    5,
-		DBConnMaxLifetime: time.Minute * 5,
-	}
-	// Add test logic here
-	if cfg.Port != "8080" {
-		t.Errorf("Expected Port to be '8080', got '%s'", cfg.Port)
-	}
+	// 1. Create a temporary .env file for this test
+	envContent := "" +
+		"PORT=1234\n" +
+		"AWS_REGION=foo\n" +
+		"ACCESS_TOKEN_EXPIRY=99\n" +
+		"DB_HOST=bar\n" +
+		"DB_USER=baz\n" +
+		"DB_PASSWORD=qux\n" +
+		"DB_NAME=mydb\n" +
+		"DB_MAX_OPEN_CONNS=10\n" +
+		"DB_MAX_IDLE_CONNS=5\n" +
+		"DB_CONN_MAX_LIFETIME=2h\n"
+
+	err := os.WriteFile(".env", []byte(envContent), 0644)
+	assert.NoError(t, err)
+	defer os.Remove(".env")
+
+	// 2. Load the configuration
+	cfg, err := config.LoadConfig()
+	assert.NoError(t, err)
+
+	// 3. Assert the loaded values
+	assert.Equal(t, "1234", cfg.Port)
+	assert.Equal(t, "foo", cfg.AWSRegion)
+	assert.Equal(t, 99, cfg.AccessTokenExpiry)
+	assert.Equal(t, "bar", cfg.DBHost)
+	assert.Equal(t, "baz", cfg.DBUser)
+	assert.Equal(t, "qux", cfg.DBPassword)
+	assert.Equal(t, "mydb", cfg.DBName)
+	assert.Equal(t, 10, cfg.DBMaxOpenConns)
+	assert.Equal(t, 5, cfg.DBMaxIdleConns)
+	assert.Equal(t, 2*time.Hour, cfg.DBConnMaxLifetime)
 }
