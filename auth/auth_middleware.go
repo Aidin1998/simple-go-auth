@@ -1,39 +1,37 @@
 package auth
 
 import (
-	"context"
-	"net/http"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/labstack/echo/v4"
 )
 
 type AuthMiddleware struct {
 	Service *AuthServiceImpl
 }
 
-func (m *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
-			return
-		}
+func (m *AuthMiddleware) Authenticate() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			authHeader := c.Request().Header.Get("Authorization")
+			if authHeader == "" {
+				return c.JSON(401, map[string]string{"error": "Missing Authorization header"})
+			}
 
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		token, err := m.Service.ValidateToken(tokenString)
-		if err != nil || !token.Valid {
-			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
-			return
-		}
+			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+			token, err := m.Service.ValidateToken(tokenString)
+			if err != nil || !token.Valid {
+				return c.JSON(401, map[string]string{"error": "Invalid or expired token"})
+			}
 
-		// Add user information to the request context
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if ok && token.Valid {
-			ctx := context.WithValue(r.Context(), "userID", claims["userID"])
-			r = r.WithContext(ctx)
-		}
+			// Add user information to the context
+			claims, ok := token.Claims.(jwt.MapClaims)
+			if ok && token.Valid {
+				c.Set("userID", claims["userID"])
+			}
 
-		next.ServeHTTP(w, r)
-	})
+			return next(c)
+		}
+	}
 }
