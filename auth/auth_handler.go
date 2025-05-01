@@ -1,8 +1,6 @@
 package auth
 
 import (
-	"encoding/json"
-
 	"github.com/labstack/echo/v4"
 )
 
@@ -21,27 +19,54 @@ func (h *AuthHandler) Ping(c echo.Context) error {
 }
 
 func (h *AuthHandler) SignUp(c echo.Context) error {
-	// Placeholder for signup logic
-	return c.String(200, "SignUp endpoint not implemented")
-}
-
-func (h *AuthHandler) SignIn(c echo.Context) error {
-	var requestBody struct {
-		UserID string `json:"userID"`
+	var req struct {
+		Username string `json:"username"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
-	if err := json.NewDecoder(c.Request().Body).Decode(&requestBody); err != nil {
+	if err := c.Bind(&req); err != nil {
 		return c.JSON(400, map[string]string{"error": "Invalid request body"})
 	}
 
-	token, err := h.Service.GenerateToken(requestBody.UserID)
+	err := h.Service.SignUp(c.Request().Context(), req.Username, req.Password, req.Email)
 	if err != nil {
-		return c.JSON(500, map[string]string{"error": "Failed to generate token"})
+		return c.JSON(500, map[string]string{"error": "Failed to create user"})
 	}
 
-	return c.JSON(200, map[string]string{"token": token})
+	return c.JSON(201, map[string]string{"message": "user created"})
+}
+
+func (h *AuthHandler) SignIn(c echo.Context) error {
+	var req struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, map[string]string{"error": "Invalid request body"})
+	}
+
+	tokens, err := h.Service.SignIn(c.Request().Context(), req.Username, req.Password)
+	if err != nil {
+		return c.JSON(401, map[string]string{"error": "Invalid credentials"})
+	}
+
+	return c.JSON(200, map[string]string{
+		"accessToken":  tokens.AccessToken,
+		"idToken":      tokens.IdToken,
+		"refreshToken": tokens.RefreshToken,
+	})
 }
 
 func (h *AuthHandler) SignOut(c echo.Context) error {
-	// Placeholder for signout logic
-	return c.String(200, "SignOut endpoint not implemented")
+	token := c.Request().Header.Get("Authorization")
+	if token == "" {
+		return c.JSON(400, map[string]string{"error": "Authorization token required"})
+	}
+
+	err := h.Service.SignOut(c.Request().Context(), token)
+	if err != nil {
+		return c.JSON(500, map[string]string{"error": "Failed to sign out"})
+	}
+
+	return c.NoContent(204)
 }
