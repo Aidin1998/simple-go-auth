@@ -1,47 +1,45 @@
 package http
 
 import (
-	echozap "github.com/brpaz/echozap"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
 
 	"my-go-project/auth"
 	"my-go-project/config"
+	"my-go-project/http/metrics"
 	"my-go-project/http/ws"
 )
 
 // SetupRouter returns a fully-configured Echo instance.
-func SetupRouter(h *auth.AuthHandler, authMw echo.MiddlewareFunc) *echo.Echo {
-	logger, _ := zap.NewProduction()
+func SetupRouter(h *auth.AuthHandler, authMw echo.MiddlewareFunc, logger *zap.Logger) *echo.Echo {
 	e := echo.New()
 
 	// Serve HTTP/2 on TLS
 	e.Server.TLSConfig.NextProtos = []string{"h2", "http/1.1"}
-
-	// 1. Initialize Zap logger
-	logger, err := zap.NewProduction()
-	if err != nil {
-		panic("failed to initialize zap logger: " + err.Error())
-	}
-	// Note: call logger.Sync() on shutdown in main.go
 
 	// 3. Global middleware, in this order:
 
 	// 3a. Recover from panics
 	e.Use(middleware.Recover())
 
-	// 3b. Structured Zap logging
-	e.Use(echozap.ZapLogger(logger))
+	// 3b. Attach X-Request-ID
+	e.Use(RequestID())
 
-	// 3c. CORS support (allow all origins by default)
+	// 3c. Structured Zap logging
+	e.Use(ZapLogger(logger))
+
+	// 3d. CORS support (allow all origins by default)
 	e.Use(middleware.CORS())
 
-	// 3d. Limit body size to 2MB
+	// 3e. Limit body size to 2MB
 	e.Use(middleware.BodyLimit("2M"))
 
-	// 3e. Rate-limit to 10 requests/minute per IP
+	// 3f. Rate-limit to 10 requests/minute per IP
 	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(10)))
+
+	// Prometheus metrics middleware
+	e.Use(metrics.MetricsMiddleware())
 
 	// 4. Debug /config endpoint
 	e.GET("/config", func(c echo.Context) error {
@@ -63,6 +61,9 @@ func SetupRouter(h *auth.AuthHandler, authMw echo.MiddlewareFunc) *echo.Echo {
 
 	// Register WebSocket endpoint
 	ws.RegisterWebsocket(e)
+
+	// Expose /metrics endpoint
+	metrics.MetricsHandler(e)
 
 	return e
 }

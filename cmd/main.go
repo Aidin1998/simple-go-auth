@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
 
 	"my-go-project/auth"
 	"my-go-project/aws"
@@ -43,8 +44,15 @@ func main() {
 	//    Note: it DOES NOT create the base echo - just records handler methods.
 	authHandler := auth.NewHandler(nil, authService, cfg) // we’ll pass 'nil' because SetupRouter will mount routes directly
 
+	// Create shared Zap logger
+	logger, err := zap.NewProduction()
+	if err != nil {
+		log.Fatalf("Failed to initialize Zap logger: %v", err)
+	}
+	defer logger.Sync()
+
 	// 6) Create the Echo router with global middleware + config/ping + auth routes
-	router := http.SetupRouter(authHandler, auth.NewMiddleware(authService))
+	router := http.SetupRouter(authHandler, auth.NewMiddleware(authService), logger)
 
 	// Set Echo server read and write timeouts
 	router.Server.ReadTimeout = cfg.EchoReadTimeout
