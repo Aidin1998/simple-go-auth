@@ -7,6 +7,7 @@ import (
 	sdkconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 )
 
 // CognitoClient wraps AWS Cognito SDK operations.
@@ -22,6 +23,10 @@ func NewCognitoClient(region, userPoolID, appClientID string) (*CognitoClient, e
 	if err != nil {
 		return nil, err
 	}
+
+	// Add OpenTelemetry instrumentation to the AWS SDK client.
+	otelaws.AppendMiddlewares(&cfg.APIOptions)
+
 	return &CognitoClient{
 		client:      cognitoidentityprovider.NewFromConfig(cfg),
 		userPoolID:  userPoolID,
