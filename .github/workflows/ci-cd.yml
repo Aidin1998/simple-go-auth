@@ -52,16 +52,16 @@ jobs:
 
       - name: Run Go tests
         env:
-          DOTENV_FILE: .env.test
+          DOTENV_FILE: .env.sample
         run: |
-          echo "PORT=1234" > .env.test
-          echo "AWS_REGION=foo" >> .env.test
-          echo "AWS_ACCESS_KEY_ID=test-key" >> .env.test
-          echo "AWS_SECRET_ACCESS_KEY=test-secret" >> .env.test
-          echo "DB_HOST=localhost" >> .env.test
-          echo "DB_USER=postgres" >> .env.test
-          echo "DB_PASSWORD=password" >> .env.test
-          echo "DB_NAME=testdb" >> .env.test
+          echo "PORT=1234" > .env.sample
+          echo "AWS_REGION=foo" >> .env.sample
+          echo "AWS_ACCESS_KEY_ID=test-key" >> .env.sample
+          echo "AWS_SECRET_ACCESS_KEY=test-secret" >> .env.sample
+          echo "DB_HOST=localhost" >> .env.sample
+          echo "DB_USER=postgres" >> .env.sample
+          echo "DB_PASSWORD=password" >> .env.sample
+          echo "DB_NAME=testdb" >> .env.sample
           # Clean up the database before running tests
           psql -h localhost -U postgres -d testdb -c "DELETE FROM users;"
           go test ./tests/auth_test.go ./tests/new_test.go ./tests/db_integration_test.go -v
