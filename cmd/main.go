@@ -1,3 +1,4 @@
+// cmd/main.go
 package main
 
 import (
@@ -13,19 +14,19 @@ import (
 )
 
 func main() {
-	// 1. Load configuration
+	// 1) Load config
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Initialize Postgres via GORM
+	// 2) Init DB
 	dbInstance, err := db.InitDB(cfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// 2. Initialize Cognito client
+	// 3) Init Cognito client
 	cognitoClient, err := aws.NewCognitoClient(
 		cfg.AWSRegion,
 		cfg.CognitoUserPoolID,
@@ -35,29 +36,22 @@ func main() {
 		log.Fatalf("Failed to initialize Cognito client: %v", err)
 	}
 
-	// 3. Build the auth service, handlers & middleware
+	// 4) Build AuthService
 	authService := auth.NewAuthServiceImpl(cognitoClient, dbInstance)
-	apiGroup := echo.New().Group("/api") // Create an *echo.Group instance
-	authHandler := auth.NewHandler(apiGroup, authService)
-	authMiddleware := auth.NewMiddleware(authService)
 
-	// 4. Setup Echo router & global middleware
+	// 5) Build your handler (this also registers its own routes on a new echo.Group internally)
+	//    Note: it DOES NOT create the base echo - just records handler methods.
+	authHandler := auth.NewHandler(nil, authService, cfg) // we’ll pass 'nil' because SetupRouter will mount routes directly
+
+	// 6) Create the Echo router with global middleware + config/ping + auth routes
 	router := http.SetupRouter(authHandler, auth.NewMiddleware(authService))
 
-	// 5. Public routes
+	// 7) Root welcome (optional – you can also add this in SetupRouter)
 	router.GET("/", func(c echo.Context) error {
 		return c.String(200, "🚀 Welcome to BitPolaris! Please POST to /signin or /signup")
 	})
-	router.GET("/ping", authHandler.Ping)
-	router.POST("/signup", authHandler.SignUp)
-	router.POST("/signin", authHandler.SignIn)
 
-	// 6. Protected route
-	protected := router.Group("")
-	protected.Use(authMiddleware)
-	protected.POST("/logout", authHandler.SignOut)
-
-	// 7. Start server
+	// 8) Start
 	log.Printf("Server running on port %s...\n", cfg.Port)
 	log.Fatal(router.Start(":" + cfg.Port))
 }

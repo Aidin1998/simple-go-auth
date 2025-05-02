@@ -22,6 +22,7 @@ type Config struct {
 	JWTSecret          string        // populated at startup from AWS
 	CognitoUserPoolID  string        // from COGNITO_USER_POOL_ID
 	CognitoAppClientID string        // from COGNITO_APP_CLIENT_ID
+	RecaptchaSecretKey string        // from RECAPTCHA_SECRET_KEY
 }
 
 // LoadConfig reads .env and environment variables into Config.
@@ -45,6 +46,7 @@ func LoadConfig() (*Config, error) {
 		JWTSecret:          "", // will be fetched from AWS
 		CognitoUserPoolID:  viper.GetString("COGNITO_USER_POOL_ID"),
 		CognitoAppClientID: viper.GetString("COGNITO_APP_CLIENT_ID"),
+		RecaptchaSecretKey: viper.GetString("RECAPTCHA_SECRET_KEY"),
 	}
 
 	// Fallback defaults
