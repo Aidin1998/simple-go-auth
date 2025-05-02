@@ -9,7 +9,7 @@ import (
 	"my-go-project/aws"
 	"my-go-project/config"
 	"my-go-project/db"
-	httpPkg "my-go-project/http"
+	"my-go-project/http"
 )
 
 func main() {
@@ -42,7 +42,7 @@ func main() {
 	authMiddleware := auth.NewMiddleware(authService)
 
 	// 4. Setup Echo router & global middleware
-	router := httpPkg.SetupRouter()
+	router := http.SetupRouter(authHandler, auth.NewMiddleware(authService))
 
 	// 5. Public routes
 	router.GET("/", func(c echo.Context) error {

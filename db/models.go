@@ -14,10 +14,11 @@ type User struct {
 
 // RefreshToken tracks a user's refresh tokens.
 type RefreshToken struct {
-	ID        uint      `gorm:"primaryKey"`
-	UserID    uint      `gorm:"index;not null"`
-	Token     string    `gorm:"unique;not null"`
-	ExpiresAt time.Time `gorm:"not null"`
-	Revoked   bool      `gorm:"default:false"`
-	CreatedAt time.Time
+	ID            uint      `gorm:"primaryKey"`
+	UserID        uint      `gorm:"index;not null"`
+	Token         string    `gorm:"unique;not null"`
+	ExpiresAt     time.Time `gorm:"not null"`
+	Revoked       bool      `gorm:"default:false"`
+	PreviousToken string    `gorm:"unique;default:''"`
+	CreatedAt     time.Time
 }

@@ -15,6 +15,7 @@ type AuthHandler struct {
 func NewHandler(router *echo.Group, svc *AuthServiceImpl) *AuthHandler {
 	h := &AuthHandler{Service: svc}
 	router.POST("/confirm", h.ConfirmSignUp)
+	router.POST("/refresh", h.Refresh)
 	return h
 }
 
@@ -93,4 +94,18 @@ func (h *AuthHandler) SignOut(c echo.Context) error {
 	}
 
 	return c.NoContent(204)
+}
+
+func (h *AuthHandler) Refresh(c echo.Context) error {
+	var req struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, map[string]string{"error": "Invalid request body"})
+	}
+	tokens, err := h.Service.RefreshTokens(c.Request().Context(), req.RefreshToken)
+	if err != nil {
+		return c.JSON(401, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(200, tokens)
 }

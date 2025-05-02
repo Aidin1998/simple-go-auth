@@ -78,3 +78,14 @@ func (c *CognitoClient) ConfirmSignUp(ctx context.Context, username, code string
 	})
 	return err
 }
+
+// RefreshAuth uses the REFRESH_TOKEN_AUTH flow to rotate tokens.
+func (c *CognitoClient) RefreshAuth(ctx context.Context, refreshToken string) (*cognitoidentityprovider.InitiateAuthOutput, error) {
+	return c.client.InitiateAuth(ctx, &cognitoidentityprovider.InitiateAuthInput{
+		AuthFlow: types.AuthFlowTypeRefreshTokenAuth,
+		ClientId: aws.String(c.appClientID),
+		AuthParameters: map[string]string{
+			"REFRESH_TOKEN": refreshToken,
+		},
+	})
+}

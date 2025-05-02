@@ -6,20 +6,21 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
 
+	"my-go-project/auth"
 	"my-go-project/config"
 )
 
 // SetupRouter returns a fully-configured Echo instance.
-func SetupRouter() *echo.Echo {
+func SetupRouter(h *auth.AuthHandler, authMw echo.MiddlewareFunc) *echo.Echo {
+	logger, _ := zap.NewProduction()
+	e := echo.New()
+
 	// 1. Initialize Zap logger
 	logger, err := zap.NewProduction()
 	if err != nil {
 		panic("failed to initialize zap logger: " + err.Error())
 	}
 	// Note: call logger.Sync() on shutdown in main.go
-
-	// 2. New Echo instance
-	e := echo.New()
 
 	// 3. Global middleware, in this order:
 
@@ -35,6 +36,9 @@ func SetupRouter() *echo.Echo {
 	// 3d. Limit body size to 2MB
 	e.Use(middleware.BodyLimit("2M"))
 
+	// 3e. Rate-limit to 10 requests/minute per IP
+	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(10)))
+
 	// 4. Debug /config endpoint
 	e.GET("/config", func(c echo.Context) error {
 		cfg, err := config.LoadConfig()
@@ -44,5 +48,13 @@ func SetupRouter() *echo.Echo {
 		return c.JSON(200, cfg)
 	})
 
+	e.GET("/ping", h.Ping)
+
+	// granular rate‐limiter
+	rateLimiterStore := middleware.NewRateLimiterMemoryStore(10)
+	e.POST("/signup", h.SignUp, middleware.RateLimiter(rateLimiterStore))
+	e.POST("/signin", h.SignIn, middleware.RateLimiter(rateLimiterStore))
+	e.POST("/refresh", h.Refresh, middleware.RateLimiter(rateLimiterStore))
+	e.POST("/logout", h.SignOut, authMw)
 	return e
 }
