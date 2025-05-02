@@ -2,26 +2,41 @@ package tests
 
 import (
 	"context"
-	"os"
 	"testing"
+	"time"
 
 	"my-go-project/aws"
+	"my-go-project/config"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestCognitoLocalSignUpSignIn(t *testing.T) {
-	// Arrange: point AWS SDK at Localstack
-	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("COGNITO_ENDPOINT", "http://localhost:4566") // Localstack endpoint
-	client, err := aws.NewCognitoClient("us-east-1", "test-pool-id", "test-client-id")
-	assert.NoError(t, err)
+func TestCognitoFlows(t *testing.T) {
+	// Load configuration and override endpoints for LocalStack
+	cfg, _ := config.LoadConfig()
+	cognitoClient, err := aws.NewCognitoClient(
+		cfg.AWSRegion,
+		"us-east-1_userpoolid",
+		"localstack-appclient",
+	)
+	require.NoError(t, err)
 
-	// Act: SignUp & SignIn must succeed
-	err = client.SignUp(context.TODO(), "user1", "P@ssw0rd!", "email@example.com")
-	assert.NoError(t, err)
+	ctx := context.Background()
+	username, pw, email := "testu", "Password1!", "t@e.com"
 
-	authOut, err := client.SignIn(context.TODO(), "user1", "P@ssw0rd!")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, authOut.AuthenticationResult.AccessToken)
+	// SignUp
+	require.NoError(t, cognitoClient.SignUp(ctx, username, pw, email))
+	time.Sleep(2 * time.Second) // LocalStack eventual consistency
+
+	// ConfirmSignUp
+	require.NoError(t, cognitoClient.ConfirmSignUp(ctx, username, "123456"))
+
+	// SignIn
+	out, err := cognitoClient.SignIn(ctx, username, pw)
+	require.NoError(t, err)
+	require.NotNil(t, out.AuthenticationResult)
+
+	// SignOut
+	accessToken := *out.AuthenticationResult.AccessToken
+	require.NoError(t, cognitoClient.SignOut(ctx, accessToken))
 }

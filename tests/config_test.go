@@ -1,13 +1,18 @@
 package tests
 
 import (
+	"encoding/json"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
 	"my-go-project/config"
+	"my-go-project/http"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -43,4 +48,21 @@ func TestLoadConfig(t *testing.T) {
 	assert.Equal(t, 10, cfg.DBMaxOpenConns)
 	assert.Equal(t, 5, cfg.DBMaxIdleConns)
 	assert.Equal(t, 2*time.Hour, cfg.DBConnMaxLifetime)
+}
+
+func TestConfigEndpoint(t *testing.T) {
+	// Load a known test .env file via Viper
+	cfg, err := config.LoadConfig()
+	require.NoError(t, err)
+
+	// Mount router
+	router := http.SetupRouter(nil, nil, zap.NewNop(), cfg)
+	req := httptest.NewRequest("GET", "/config", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	// Decode and compare
+	var got config.Config
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	require.Equal(t, cfg, &got)
 }
