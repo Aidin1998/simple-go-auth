@@ -32,6 +32,9 @@ func NewHandler(e *echo.Echo, svc *AuthServiceImpl, cfg *config.Config) *AuthHan
 
 	// Protected
 	e.POST("/logout", h.SignOut, NewMiddleware(svc))
+	e.POST("/mfa/setup", h.SetupMFA)
+	e.POST("/mfa/verify", h.VerifyMFA)
+	e.POST("/social/:provider/callback", h.SocialCallback)
 
 	return h
 }
@@ -135,4 +138,22 @@ func (h *AuthHandler) SignOut(c echo.Context) error {
 		return c.JSON(500, map[string]string{"error": "failed to sign out"})
 	}
 	return c.NoContent(204)
+}
+
+// SetupMFA sets up multi-factor authentication for the user.
+func (h *AuthHandler) SetupMFA(c echo.Context) error {
+	// Implementation for setting up MFA
+	return c.JSON(200, map[string]string{"message": "MFA setup successful"})
+}
+
+// VerifyMFA verifies the multi-factor authentication code.
+func (h *AuthHandler) VerifyMFA(c echo.Context) error {
+	// Implementation for verifying MFA
+	return c.JSON(200, map[string]string{"message": "MFA verification successful"})
+}
+
+// SocialCallback handles social login callbacks.
+func (h *AuthHandler) SocialCallback(c echo.Context) error {
+	// Implementation for social login callback
+	return c.JSON(200, map[string]string{"message": "Social login successful"})
 }

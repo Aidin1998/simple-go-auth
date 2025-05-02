@@ -25,6 +25,8 @@ type Config struct {
 	RecaptchaSecretKey string        // from RECAPTCHA_SECRET_KEY
 	EchoReadTimeout    time.Duration // default '5s'
 	EchoWriteTimeout   time.Duration // default '10s'
+	MFAEnabled         bool          // default "false"
+	SocialProviders    []string      // default ""
 }
 
 // LoadConfig reads .env and environment variables into Config.
@@ -51,6 +53,8 @@ func LoadConfig() (*Config, error) {
 		RecaptchaSecretKey: viper.GetString("RECAPTCHA_SECRET_KEY"),
 		EchoReadTimeout:    viper.GetDuration("ECHO_READ_TIMEOUT"),
 		EchoWriteTimeout:   viper.GetDuration("ECHO_WRITE_TIMEOUT"),
+		MFAEnabled:         viper.GetBool("MFA_ENABLED"),
+		SocialProviders:    viper.GetStringSlice("SOCIAL_PROVIDERS"),
 	}
 
 	// Fallback defaults
@@ -77,6 +81,12 @@ func LoadConfig() (*Config, error) {
 	}
 	if cfg.EchoWriteTimeout == 0 {
 		cfg.EchoWriteTimeout = 10 * time.Second
+	}
+	if !cfg.MFAEnabled {
+		cfg.MFAEnabled = false
+	}
+	if len(cfg.SocialProviders) == 0 {
+		cfg.SocialProviders = []string{}
 	}
 
 	return cfg, nil

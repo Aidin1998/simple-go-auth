@@ -1,0 +1,22 @@
+name: Chaos Engineering Drill
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"   # 1st of every month at 06:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  kill-pod:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+      - name: Run chaos drill
+        run: |
+          ./scripts/chaos_kill_pod.sh staging
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG_STAGING }}

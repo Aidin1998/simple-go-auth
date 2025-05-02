@@ -94,3 +94,27 @@ func (c *CognitoClient) RefreshAuth(ctx context.Context, refreshToken string) (*
 		},
 	})
 }
+
+// AssociateSoftwareToken associates a software token for MFA.
+func (c *CognitoClient) AssociateSoftwareToken(ctx context.Context, accessToken string) (*cognitoidentityprovider.AssociateSoftwareTokenOutput, error) {
+	// Stub: Call AWS SDK's AssociateSoftwareToken API
+	return nil, nil
+}
+
+// VerifySoftwareToken verifies a software token for MFA.
+func (c *CognitoClient) VerifySoftwareToken(ctx context.Context, session, code string) (*cognitoidentityprovider.VerifySoftwareTokenOutput, error) {
+	// Stub: Call AWS SDK's VerifySoftwareToken API
+	return nil, nil
+}
+
+// EnableMFA enables MFA for a user.
+func (c *CognitoClient) EnableMFA(ctx context.Context, username string) error {
+	// Stub: Call AWS SDK to enable MFA for a user
+	return nil
+}
+
+// InitiateSocialAuth initiates social login authentication.
+func (c *CognitoClient) InitiateSocialAuth(ctx context.Context, provider, idToken string) (*cognitoidentityprovider.InitiateAuthOutput, error) {
+	// Stub: Call AWS SDK's InitiateAuth API for social login
+	return nil, nil
+}

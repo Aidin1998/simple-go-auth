@@ -69,6 +69,21 @@ func SetupRouter(h *auth.AuthHandler, authMw echo.MiddlewareFunc, logger *zap.Lo
 	e.POST("/refresh", h.Refresh, middleware.RateLimiter(rateLimiterStore))
 	e.POST("/logout", h.SignOut, authMw)
 
+	// Mount routes conditionally based on configuration
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		logger.Fatal("Failed to load configuration", zap.Error(err))
+	}
+
+	if cfg.MFAEnabled {
+		e.POST("/mfa/setup", h.SetupMFA)
+		e.POST("/mfa/verify", h.VerifyMFA)
+	}
+
+	for _, p := range cfg.SocialProviders {
+		e.GET("/oauth/"+p+"/callback", h.SocialCallback)
+	}
+
 	// Register WebSocket endpoint
 	ws.RegisterWebsocket(e)
 
