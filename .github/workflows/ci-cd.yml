@@ -76,13 +76,39 @@ jobs:
           docker build -t $IMAGE_URI:latest .
           docker push $IMAGE_URI:latest
 
-      - name: Deploy to Amazon ECS
+      # Terraform deploy (only on main branch)
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.4.0
+
+      - name: Terraform Init & Apply
+        if: github.ref == 'refs/heads/main'
+        working-directory: infra/terraform
         run: |
-          aws ecs update-service \
-            --cluster simple-go-auth-cluster \
-            --service simple-go-auth-service \
-            --region ap-southeast-2 \
-            --force-new-deployment
+          terraform init
+          terraform apply -auto-approve
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # Kubernetes deploy (after TF)
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Deploy to EKS
+        run: |
+          kubectl apply -f k8s/
+          kubectl rollout status deployment/auth-service -n auth
+
+      # Post-deploy smoke test
+      - name: Run smoke tests
+        run: ./tests/smoke_test.sh
+        env:
+          SERVICE_HOST: ${{ steps.deploy.outputs.host }}
 
       - name: Install k6
         run: |
@@ -92,4 +118,3 @@ jobs:
           
       - name: Run k6 load test
         run: k6 run --vus 10 --duration 30s loadtest/k6/auth.js
-          
