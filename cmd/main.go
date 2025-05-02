@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/labstack/echo/v4"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 	"go.uber.org/zap"
 
 	"my-go-project/auth"
@@ -12,9 +13,14 @@ import (
 	"my-go-project/config"
 	"my-go-project/db"
 	"my-go-project/http"
+	"my-go-project/otel"
 )
 
 func main() {
+	// 0. Initialize OpenTelemetry
+	shutdown := otel.InitTracer()
+	defer shutdown()
+
 	// 1) Load config
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -50,6 +56,10 @@ func main() {
 		log.Fatalf("Failed to initialize Zap logger: %v", err)
 	}
 	defer logger.Sync()
+
+	// 3bis. Wrap Echo with OTel middleware
+	e := echo.New()
+	e.Use(otelecho.Middleware("my-go-auth-service"))
 
 	// 6) Create the Echo router with global middleware + config/ping + auth routes
 	router := http.SetupRouter(authHandler, auth.NewMiddleware(authService), logger)
