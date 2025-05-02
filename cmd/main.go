@@ -16,6 +16,8 @@ import (
 	"my-go-project/otel"
 )
 
+// 3bis. Initialize your SecretsManager for router health checks
+
 func main() {
 	// 0. Initialize OpenTelemetry
 	shutdown := otel.InitTracer()
@@ -62,7 +64,7 @@ func main() {
 	e.Use(otelecho.Middleware("my-go-auth-service"))
 
 	// 6) Create the Echo router with global middleware + config/ping + auth routes
-	router := http.SetupRouter(authHandler, auth.NewMiddleware(authService), logger)
+	router := http.SetupRouter(authHandler, auth.NewMiddleware(authService), logger, cfg)
 
 	// Set Echo server read and write timeouts
 	router.Server.ReadTimeout = cfg.EchoReadTimeout

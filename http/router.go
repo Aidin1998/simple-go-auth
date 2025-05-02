@@ -7,13 +7,20 @@ import (
 
 	"my-go-project/auth"
 	"my-go-project/config"
+	"my-go-project/db"
+	"my-go-project/http/health"
 	"my-go-project/http/metrics"
 	"my-go-project/http/ws"
 )
 
 // SetupRouter returns a fully-configured Echo instance.
-func SetupRouter(h *auth.AuthHandler, authMw echo.MiddlewareFunc, logger *zap.Logger) *echo.Echo {
+func SetupRouter(h *auth.AuthHandler, authMw echo.MiddlewareFunc, logger *zap.Logger, dbConfig *config.Config) *echo.Echo {
 	e := echo.New()
+
+	// Initialize the database using InitDB
+	if _, err := db.InitDB(dbConfig); err != nil {
+		logger.Fatal("Failed to initialize database", zap.Error(err))
+	}
 
 	// Serve HTTP/2 on TLS
 	e.Server.TLSConfig.NextProtos = []string{"h2", "http/1.1"}
@@ -51,6 +58,9 @@ func SetupRouter(h *auth.AuthHandler, authMw echo.MiddlewareFunc, logger *zap.Lo
 	})
 
 	e.GET("/ping", h.Ping)
+
+	// Wire health endpoint
+	e.GET("/health", health.HealthCheck(dbConfig, nil))
 
 	// granular rate‐limiter
 	rateLimiterStore := middleware.NewRateLimiterMemoryStore(10)
