@@ -1,16 +1,11 @@
-name: CI/CD Pipeline
+name: Test CI/CD Pipeline
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
-    env:
-      IMAGE_URI: 381792517210.dkr.ecr.ap-southeast-2.amazonaws.com/aidin/simple-go-auth
 
     services:
       postgres:
@@ -30,13 +25,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v3
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-southeast-2
-
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -44,11 +32,6 @@ jobs:
 
       - name: Run Go mod tidy
         run: go mod tidy
-
-      - name: Lint (fmt & vet)
-        run: |
-          go fmt ./...
-          go vet ./...
 
       - name: Run Go tests
         env:
@@ -62,24 +45,5 @@ jobs:
           echo "DB_USER=postgres" >> .env.test
           echo "DB_PASSWORD=password" >> .env.test
           echo "DB_NAME=testdb" >> .env.test
-          # Clean up the database before running tests
           psql -h localhost -U postgres -d testdb -c "DELETE FROM users;"
           go test ./tests/auth_test.go ./tests/new_test.go ./tests/db_integration_test.go -v
-          go test ./tests/auth_test.go ./tests/new_test.go ./tests/db_integration_test.go -coverprofile=coverage.out
-          go tool cover -func=coverage.out
-
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Build, tag, and push Docker image
-        run: |
-          docker build -t $IMAGE_URI:latest .
-          docker push $IMAGE_URI:latest
-
-      - name: Deploy to Amazon ECS
-        run: |
-          aws ecs update-service \
-            --cluster simple-go-auth-cluster \
-            --service simple-go-auth-service \
-            --region ap-southeast-2 \
-            --force-new-deployment
