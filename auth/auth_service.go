@@ -91,3 +91,8 @@ func (s *AuthServiceImpl) ValidateToken(ctx context.Context, token string) error
 	_, err := s.CognitoClient.GetUser(ctx, token)
 	return err
 }
+
+// ConfirmSignUp confirms a user's sign-up using a verification code.
+func (s *AuthServiceImpl) ConfirmSignUp(ctx context.Context, username, code string) error {
+	return s.CognitoClient.ConfirmSignUp(ctx, username, code)
+}

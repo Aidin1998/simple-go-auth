@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"regexp"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -10,8 +12,10 @@ type AuthHandler struct {
 }
 
 // NewHandler creates a new AuthHandler with the provided service.
-func NewHandler(svc *AuthServiceImpl) *AuthHandler {
-	return &AuthHandler{Service: svc}
+func NewHandler(router *echo.Group, svc *AuthServiceImpl) *AuthHandler {
+	h := &AuthHandler{Service: svc}
+	router.POST("/confirm", h.ConfirmSignUp)
+	return h
 }
 
 // Ping returns pong.
@@ -29,12 +33,31 @@ func (h *AuthHandler) SignUp(c echo.Context) error {
 		return c.JSON(400, map[string]string{"error": "Invalid request body"})
 	}
 
+	var pwdPolicy = regexp.MustCompile(`^(?=.*[0-9])(?=.*[A-Z]).{8,}$`)
+	if !pwdPolicy.MatchString(req.Password) {
+		return c.JSON(400, map[string]string{"error": "password must be ≥8 chars, include uppercase & digit"})
+	}
+
 	err := h.Service.SignUp(c.Request().Context(), req.Username, req.Password, req.Email)
 	if err != nil {
 		return c.JSON(500, map[string]string{"error": "Failed to create user"})
 	}
 
-	return c.JSON(201, map[string]string{"message": "user created"})
+	return c.JSON(202, map[string]string{"message": "verification code sent"})
+}
+
+func (h *AuthHandler) ConfirmSignUp(c echo.Context) error {
+	var req struct {
+		Username string `json:"username"`
+		Code     string `json:"code"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, map[string]string{"error": "Invalid request body"})
+	}
+	if err := h.Service.ConfirmSignUp(c.Request().Context(), req.Username, req.Code); err != nil {
+		return c.JSON(400, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(200, map[string]string{"message": "user confirmed"})
 }
 
 func (h *AuthHandler) SignIn(c echo.Context) error {

@@ -37,7 +37,8 @@ func main() {
 
 	// 3. Build the auth service, handlers & middleware
 	authService := auth.NewAuthServiceImpl(cognitoClient, dbInstance)
-	authHandler := auth.NewHandler(authService)
+	apiGroup := echo.New().Group("/api") // Create an *echo.Group instance
+	authHandler := auth.NewHandler(apiGroup, authService)
 	authMiddleware := auth.NewMiddleware(authService)
 
 	// 4. Setup Echo router & global middleware

@@ -68,3 +68,13 @@ func (c *CognitoClient) GetUser(ctx context.Context, accessToken string) (*cogni
 		AccessToken: aws.String(accessToken),
 	})
 }
+
+// ConfirmSignUp verifies a user’s email/SMS code.
+func (c *CognitoClient) ConfirmSignUp(ctx context.Context, username, code string) error {
+	_, err := c.client.ConfirmSignUp(ctx, &cognitoidentityprovider.ConfirmSignUpInput{
+		ClientId:         aws.String(c.appClientID),
+		Username:         aws.String(username),
+		ConfirmationCode: aws.String(code),
+	})
+	return err
+}
