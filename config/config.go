@@ -23,6 +23,8 @@ type Config struct {
 	CognitoUserPoolID  string        // from COGNITO_USER_POOL_ID
 	CognitoAppClientID string        // from COGNITO_APP_CLIENT_ID
 	RecaptchaSecretKey string        // from RECAPTCHA_SECRET_KEY
+	EchoReadTimeout    time.Duration // default '5s'
+	EchoWriteTimeout   time.Duration // default '10s'
 }
 
 // LoadConfig reads .env and environment variables into Config.
@@ -47,6 +49,8 @@ func LoadConfig() (*Config, error) {
 		CognitoUserPoolID:  viper.GetString("COGNITO_USER_POOL_ID"),
 		CognitoAppClientID: viper.GetString("COGNITO_APP_CLIENT_ID"),
 		RecaptchaSecretKey: viper.GetString("RECAPTCHA_SECRET_KEY"),
+		EchoReadTimeout:    viper.GetDuration("ECHO_READ_TIMEOUT"),
+		EchoWriteTimeout:   viper.GetDuration("ECHO_WRITE_TIMEOUT"),
 	}
 
 	// Fallback defaults
@@ -67,6 +71,12 @@ func LoadConfig() (*Config, error) {
 	}
 	if cfg.CognitoAppClientID == "" {
 		cfg.CognitoAppClientID = ""
+	}
+	if cfg.EchoReadTimeout == 0 {
+		cfg.EchoReadTimeout = 5 * time.Second
+	}
+	if cfg.EchoWriteTimeout == 0 {
+		cfg.EchoWriteTimeout = 10 * time.Second
 	}
 
 	return cfg, nil

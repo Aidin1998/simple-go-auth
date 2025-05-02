@@ -46,6 +46,10 @@ func main() {
 	// 6) Create the Echo router with global middleware + config/ping + auth routes
 	router := http.SetupRouter(authHandler, auth.NewMiddleware(authService))
 
+	// Set Echo server read and write timeouts
+	router.Server.ReadTimeout = cfg.EchoReadTimeout
+	router.Server.WriteTimeout = cfg.EchoWriteTimeout
+
 	// 7) Root welcome (optional – you can also add this in SetupRouter)
 	router.GET("/", func(c echo.Context) error {
 		return c.String(200, "🚀 Welcome to BitPolaris! Please POST to /signin or /signup")
@@ -53,5 +57,7 @@ func main() {
 
 	// 8) Start
 	log.Printf("Server running on port %s...\n", cfg.Port)
-	log.Fatal(router.Start(":" + cfg.Port))
+
+	// Listen with TLS (HTTP/2)
+	log.Fatal(router.StartTLS(":"+cfg.Port, "certs/server.crt", "certs/server.key"))
 }

@@ -8,12 +8,16 @@ import (
 
 	"my-go-project/auth"
 	"my-go-project/config"
+	"my-go-project/http/ws"
 )
 
 // SetupRouter returns a fully-configured Echo instance.
 func SetupRouter(h *auth.AuthHandler, authMw echo.MiddlewareFunc) *echo.Echo {
 	logger, _ := zap.NewProduction()
 	e := echo.New()
+
+	// Serve HTTP/2 on TLS
+	e.Server.TLSConfig.NextProtos = []string{"h2", "http/1.1"}
 
 	// 1. Initialize Zap logger
 	logger, err := zap.NewProduction()
@@ -56,5 +60,9 @@ func SetupRouter(h *auth.AuthHandler, authMw echo.MiddlewareFunc) *echo.Echo {
 	e.POST("/signin", h.SignIn, middleware.RateLimiter(rateLimiterStore))
 	e.POST("/refresh", h.Refresh, middleware.RateLimiter(rateLimiterStore))
 	e.POST("/logout", h.SignOut, authMw)
+
+	// Register WebSocket endpoint
+	ws.RegisterWebsocket(e)
+
 	return e
 }

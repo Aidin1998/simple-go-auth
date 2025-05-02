@@ -83,3 +83,13 @@ jobs:
             --service simple-go-auth-service \
             --region ap-southeast-2 \
             --force-new-deployment
+
+      - name: Install k6
+        run: |
+              wget https://github.com/grafana/k6/releases/download/v0.45.0/k6-v0.45.0-linux-amd64.tar.gz
+              tar -xzf k6-v0.45.0-linux-amd64.tar.gz
+              sudo mv k6-v0.45.0-linux-amd64/k6 /usr/local/bin/
+          
+      - name: Run k6 load test
+        run: k6 run --vus 10 --duration 30s loadtest/k6/auth.js
+          
