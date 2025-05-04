@@ -2,7 +2,7 @@ package db
 
 import (
 	"database/sql"
-	"my-go-project/config"
+	"simple-go-auth/internal/users/config"
 	"time"
 )
 

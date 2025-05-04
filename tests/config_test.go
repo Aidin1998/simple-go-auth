@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"my-go-project/config"
-	"my-go-project/http"
+	"simple-go-auth/internal/users/config"
+	"simple-go-auth/internal/users/http"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

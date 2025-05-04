@@ -4,7 +4,7 @@ package auth
 import (
 	"regexp"
 
-	"my-go-project/config"
+	"simple-go-auth/internal/users/config"
 
 	"github.com/labstack/echo/v4"
 )

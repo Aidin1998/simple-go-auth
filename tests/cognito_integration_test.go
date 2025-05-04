@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"my-go-project/aws"
-	"my-go-project/config"
+	"simple-go-auth/internal/users/aws"
+	"simple-go-auth/internal/users/config"
 
 	"github.com/stretchr/testify/require"
 )

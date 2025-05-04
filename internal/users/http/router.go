@@ -5,12 +5,12 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
 
-	"my-go-project/auth"
-	"my-go-project/config"
-	"my-go-project/db"
-	"my-go-project/http/health"
-	"my-go-project/http/metrics"
-	"my-go-project/http/ws"
+	"simple-go-auth/internal/users/auth"
+	"simple-go-auth/internal/users/config"
+	"simple-go-auth/internal/users/db"
+	"simple-go-auth/internal/users/http/health"
+	"simple-go-auth/internal/users/http/metrics"
+	"simple-go-auth/internal/users/http/ws"
 )
 
 // SetupRouter returns a fully-configured Echo instance.

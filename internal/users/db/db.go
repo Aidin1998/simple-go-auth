@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"my-go-project/config"
+	"simple-go-auth/internal/users/config"
 
 	"github.com/uptrace/opentelemetry-go-extra/otelsql"
 	"gorm.io/driver/postgres"

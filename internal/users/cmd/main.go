@@ -8,12 +8,12 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 	"go.uber.org/zap"
 
-	"my-go-project/auth"
-	"my-go-project/aws"
-	"my-go-project/config"
-	"my-go-project/db"
-	"my-go-project/http"
-	"my-go-project/otel"
+	"simple-go-auth/internal/users/auth"
+	"simple-go-auth/internal/users/aws"
+	"simple-go-auth/internal/users/config"
+	"simple-go-auth/internal/users/db"
+	"simple-go-auth/internal/users/http"
+	"simple-go-auth/internal/users/otel"
 )
 
 // 3bis. Initialize your SecretsManager for router health checks

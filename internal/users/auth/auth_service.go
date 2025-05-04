@@ -6,8 +6,8 @@ import (
 	"errors"
 	"time"
 
-	"my-go-project/aws"
-	"my-go-project/db"
+	"simple-go-auth/internal/users/aws"
+	"simple-go-auth/internal/users/db"
 
 	"gorm.io/gorm"
 )

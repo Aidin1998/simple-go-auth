@@ -4,9 +4,10 @@ import (
 	"os"
 	"testing"
 
-	"my-go-project/auth"
-	"my-go-project/config"
-	"my-go-project/http"
+	"simple-go-auth/internal/users/config"
+	"simple-go-auth/internal/users/http"
+
+	"simple-go-auth/internal/users/auth"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"

@@ -3,8 +3,8 @@ package tests
 import (
 	"testing"
 
-	"my-go-project/config"
-	"my-go-project/db"
+	"simple-go-auth/internal/users/config"
+	"simple-go-auth/internal/users/db"
 
 	"github.com/stretchr/testify/require"
 )

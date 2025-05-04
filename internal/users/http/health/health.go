@@ -3,9 +3,9 @@ package health
 import (
 	"net/http"
 
-	"my-go-project/aws"
-	"my-go-project/config"
-	"my-go-project/db"
+	"simple-go-auth/internal/users/aws"
+	"simple-go-auth/internal/users/config"
+	"simple-go-auth/internal/users/db"
 
 	"github.com/labstack/echo/v4"
 )
